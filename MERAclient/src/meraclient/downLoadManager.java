@@ -13,11 +13,12 @@ public class downLoadManager {
     VBox filesVB;
     Label pathLBL;
     Stage stage;
-
-    volatile String file;
+    Label ExternalLabel;
+    String file;
     String presentDir;
 
-    public downLoadManager(){
+    public downLoadManager(Label label){
+        ExternalLabel = label;
         file = null;
         stage = new Stage();
             stage.setTitle("Download Manager");
@@ -74,6 +75,7 @@ public class downLoadManager {
     void addFileEvent(Button b){
         b.setOnAction(event->{
             file = presentDir+b.getText();
+            ExternalLabel.setText(file);
             stage.close();
         });
     }

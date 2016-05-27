@@ -95,35 +95,16 @@ public class MERAclient extends Application{
         });
 
         unLoadChoiceBTN.setOnAction(event->{
-            unLoadManager manager = new unLoadManager();
-                Thread waiter = new Thread(new Runnable(){
-                    public void run(){
-                        while(manager.file==null);
-                        upLoadFile = new File(manager.file);
-                        System.out.println(manager.file);
-
-                    }
-                }
-            );
-                waiter.setDaemon(true);
-                waiter.start();
-
+            unLoadManager manager = new unLoadManager(unLoadPathLBL);
         });
 
+        unLoadPathLBL.textProperty().addListener(event->{
+            upLoadFile = new File(unLoadPathLBL.getText());
+        });
+
+
         downLoadChoiceBTN.setOnAction(event->{
-            downLoadManager manager = new downLoadManager();
-                Thread waiter = new Thread(new Runnable(){
-                    public void run(){
-                        while(manager.file==null);
-                        upLoadFile = new File(manager.file);
-                        System.out.println(manager.file);
-
-                    }
-                }
-            );
-                waiter.setDaemon(true);
-                waiter.start();
-
+            downLoadManager manager = new downLoadManager(downLoadPathLBL);
         });
 
         Scene scene = new Scene(root);

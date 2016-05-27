@@ -13,11 +13,12 @@ public class unLoadManager {
     VBox filesVB;
     Label pathLBL;
     Stage stage;
-
-    volatile String file;
+    Label ExternalLabel;
+    String file;
     String presentDir;
 
-    unLoadManager(){
+    unLoadManager(Label label){
+        ExternalLabel = label;
         file = null;
         stage = new Stage();
              stage.setTitle("Upload Manager");
@@ -49,7 +50,6 @@ public class unLoadManager {
     }
 
     void start(){
-
         filesVBmain = new VBox();
             HBox pathVB = new HBox(10);
                 Button upBTN = new Button("↑↑↑");
@@ -74,6 +74,7 @@ public class unLoadManager {
     void addFileEvent(Button b){
         b.setOnAction(event->{
             file = presentDir+b.getText();
+            ExternalLabel.setText(file);
             stage.close();
         });
     }
