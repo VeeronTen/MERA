@@ -8,7 +8,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 
-public class unLoadManager {
+public class downLoadManager {
     VBox filesVBmain;
     VBox filesVB;
     Label pathLBL;
@@ -17,7 +17,7 @@ public class unLoadManager {
     volatile String file;
     String presentDir;
 
-    public unLoadManager(){
+    public downLoadManager(){
         file = null;
         stage = new Stage();
         presentDir="C:\\";
