@@ -17,9 +17,10 @@ public class unLoadManager {
     volatile String file;
     String presentDir;
 
-    public unLoadManager(){
+    unLoadManager(){
         file = null;
         stage = new Stage();
+             stage.setTitle("Upload Manager");
         presentDir="C:\\";
         start();
     }

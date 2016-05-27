@@ -66,7 +66,7 @@ public class MERAclient extends Application{
             Label downLoadPathLBL = new Label("Выберите директорию для сохранения");
             Button downLoadChoiceBTN = new Button("Выбрать");
             downLoadVBmain.getChildren().addAll(downLoadPathLBL, downLoadChoiceBTN);
-            downLoadVBmain.setDisable(true);
+            //downLoadVBmain.setDisable(true);
 
         GridPane root = new GridPane();
             root.setPadding(new Insets(10, 10, 10, 10));
@@ -96,6 +96,22 @@ public class MERAclient extends Application{
 
         unLoadChoiceBTN.setOnAction(event->{
             unLoadManager manager = new unLoadManager();
+                Thread waiter = new Thread(new Runnable(){
+                    public void run(){
+                        while(manager.file==null);
+                        upLoadFile = new File(manager.file);
+                        System.out.println(manager.file);
+
+                    }
+                }
+            );
+                waiter.setDaemon(true);
+                waiter.start();
+
+        });
+
+        downLoadChoiceBTN.setOnAction(event->{
+            downLoadManager manager = new downLoadManager();
                 Thread waiter = new Thread(new Runnable(){
                     public void run(){
                         while(manager.file==null);

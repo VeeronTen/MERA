@@ -20,6 +20,7 @@ public class downLoadManager {
     public downLoadManager(){
         file = null;
         stage = new Stage();
+            stage.setTitle("Download Manager");
         presentDir="C:\\";
         start();
     }
