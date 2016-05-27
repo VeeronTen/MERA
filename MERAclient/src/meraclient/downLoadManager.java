@@ -12,14 +12,13 @@ public class downLoadManager {
     VBox filesVBmain;
     VBox filesVB;
     Label pathLBL;
+
     Stage stage;
     Label ExternalLabel;
-    String file;
     String presentDir;
 
     public downLoadManager(Label label){
         ExternalLabel = label;
-        file = null;
         stage = new Stage();
             stage.setTitle("Download Manager");
         presentDir="C:\\";
@@ -37,12 +36,6 @@ public class downLoadManager {
                 b.setStyle("-fx-base:yellow");
                 newFilesVB.getChildren().add(b);
             }
-        for(File item : dir.listFiles())
-            if(item.isFile()){
-                Button b = new Button(item.getName());
-                addFileEvent(b);
-                newFilesVB.getChildren().add(b);
-            }
         }
         presentDir=path;
         pathLBL.setText(presentDir);
@@ -50,12 +43,12 @@ public class downLoadManager {
     }
 
     void start(){
-
         filesVBmain = new VBox();
             HBox pathVB = new HBox(10);
                 Button upBTN = new Button("↑↑↑");
+                Button chooseBTN = new Button("Выбрать");
                 pathLBL = new Label(presentDir);
-                pathVB.getChildren().addAll(upBTN, pathLBL);
+                pathVB.getChildren().addAll(upBTN, chooseBTN, pathLBL);
             filesVB = getDirectoryView(presentDir);
             filesVBmain.getChildren().addAll(pathVB,filesVB);
 
@@ -67,17 +60,14 @@ public class downLoadManager {
                 filesVBmain.getChildren().add(filesVB);
             }
         });
+
+        chooseBTN.setOnAction(event->{
+            ExternalLabel.setText(presentDir);
+            stage.close();
+        });
         Scene Scene = new Scene(filesVBmain);
         stage.setScene(Scene);
         stage.show();
-    }
-
-    void addFileEvent(Button b){
-        b.setOnAction(event->{
-            file = presentDir+b.getText();
-            ExternalLabel.setText(file);
-            stage.close();
-        });
     }
 
     void addDirectoryEvent(Button b){
