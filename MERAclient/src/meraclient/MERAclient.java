@@ -3,13 +3,7 @@ package meraclient;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import static java.lang.System.exit;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,25 +19,16 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class MERAclient extends Application{
-    Socket clientSocket;
+    Socket socket;
+
     BufferedInputStream is;
     BufferedOutputStream os;
-    BufferedInputStream fis;
-    BufferedOutputStream fos;
+    //BufferedInputStream fis;
+    //BufferedOutputStream fos;
+
     File upLoadFile;
     File downLoadDirectory;
-//    MERAclient(){
-//        try{
-//            clientSocket = new Socket("localhost", 8080);
-//            is = new BufferedInputStream(clientSocket.getInputStream());
-//            os = new BufferedOutputStream(clientSocket.getOutputStream());
-//            fis = new BufferedInputStream(new FileInputStream("C:\\ICAN\\1.bmp"));
-//            fos = new BufferedOutputStream(new FileOutputStream("C:\\ICAN\\22.bmp"));
-//        }catch(Exception e){
-//            System.out.println("Client has not been enabled");
-//            exit(0);
-//        }
-//    }
+
     public void start(Stage primaryStage){
         String badStyle = "-fx-base: salmon";
         String goodStyle = "-fx-base: lightgreen";
@@ -82,11 +67,12 @@ public class MERAclient extends Application{
 
         ipBTN.setOnAction(event->{//при переподключении должно все ресетаться
             try{
-                clientSocket = new Socket(ipTF.getText(), 8080);
+                socket = new Socket(ipTF.getText(), 8080);
                 ipTF.setStyle(goodStyle);
                 unLoadVBmain.setDisable(false);
                     unLoadSendBTN.setDisable(true);
                 downLoadVBmain.setDisable(false);
+                online();
             }catch (IOException ex){
                 ipTF.setStyle(badStyle);
                 unLoadVBmain.setDisable(true);
@@ -123,8 +109,36 @@ public class MERAclient extends Application{
 //    }
 
     }
-    public static void main(String[] args) {
+    public static void main(String[] args){
         launch(args);
     }
 
+    void online(){
+        new Thread(new ServerListener()).start();
+    }
+
+    class ServerListener implements Runnable{
+        ServerListener(){
+            try {
+                is = new BufferedInputStream(socket.getInputStream());
+                os = new BufferedOutputStream(socket.getOutputStream());
+            } catch (IOException ex) {
+                System.out.println("Streams are bad");
+            }
+        }
+        public void run(){
+            System.out.println("run");
+            while(true){
+                try{
+                    int count;
+                    byte[] byteArray = new byte[1];
+                    while ((count = is.read(byteArray)) != -1){
+                        System.out.println(new String(byteArray, "UTF-8"));
+                    }
+                } catch (IOException ex) {
+                    System.out.println("clclclcl");;
+                }
+            }
+        }
+    }
 }

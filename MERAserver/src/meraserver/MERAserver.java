@@ -31,8 +31,6 @@ public class MERAserver {
     }
 
         class SocketListener implements Runnable{
-            SocketListener(){
-            }
             public void run(){
                 while(true){
                     try{
@@ -68,18 +66,18 @@ public class MERAserver {
                         run();
                     System.out.println("User has been conected");
                     }catch(Exception e){
-                        System.out.println("ActiveUserConstError");
+                        System.out.println("ActiveUser Constructor Error");
                     }
                 }
                 public void run(){
+                    String s = "i am new";
                     while(true){
-                        try {
-
-                            System.out.println(is.read());
-                        } catch (IOException ex) {
-                            System.out.println("aaaaa");
-                        }
-                    }
+                    try {
+                        os.write("1".getBytes());
+                        //os.flush();
+                    } catch (IOException ex) {
+                        System.out.println("apapapa");
+                    }}
                 }
             }
         }
