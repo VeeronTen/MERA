@@ -135,7 +135,6 @@ public class MERAclient extends Application{
 
     class Connection implements Runnable{
         public void run(){
-            System.out.println("Connection is running");
             byte[] byteArray;
             while(true){
                     try{
@@ -144,10 +143,9 @@ public class MERAclient extends Application{
                         String key = new String(byteArray, "UTF-8").trim();
                         switch(key){
                             case "user":
-                                System.out.println("userww");
-                                byteArray = new byte[4];
+                                byteArray = new byte[20];
                                 is.read(byteArray);
-                                System.out.println(new String(byteArray, "UTF-8").trim());
+                                System.out.println(new String(byteArray, "UTF-8"));
                                 //is.read(byteArray);
                                 break;
                             case "del":

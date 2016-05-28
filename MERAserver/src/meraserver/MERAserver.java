@@ -59,7 +59,7 @@ public class MERAserver {
                 byteArray = new byte[20];//count/2=length
                 try{
                     newUser.is.read(byteArray);
-                    newUser.userName = new String(byteArray, "UTF-8").trim();
+                    newUser.userName = new String(byteArray, "UTF-8");
                 }catch(Exception e){
                     System.out.println("NAMEexception");
                 }
@@ -68,7 +68,6 @@ public class MERAserver {
                     try{
                         i.os.write("user".getBytes());
                         i.os.write(newUser.userName.getBytes());
-                        System.out.println("newUser added");
                     }catch(Exception e){
                         System.out.println("newUser was not add to "+i.userName);
                     }
@@ -77,14 +76,11 @@ public class MERAserver {
                 for(ActiveUser i:users){
                     try{
                         newUser.os.write("user".getBytes());
-                        newUser.os.flush();
                         newUser.os.write(i.userName.getBytes());
-                        System.out.println("user to newUser added");
                     }catch(Exception e){
                         System.out.println(i.userName+" was not added to newUser");
                     }
                 }
-                System.out.println("alladded");
             }
             public void deleteUser(ActiveUser u){
                 ;
@@ -113,7 +109,6 @@ public class MERAserver {
                             String key = new String(byteArray, "UTF-8").trim();
                             switch(key){
                                 case "user":
-                                    System.out.println("user");
                                     addUser(this);
                                     break;
                                 case "del":
