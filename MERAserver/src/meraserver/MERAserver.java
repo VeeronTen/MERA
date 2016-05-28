@@ -34,7 +34,7 @@ public class MERAserver {
             public void run(){
                 while(true){
                     try{
-                        users.addNewUser(serverSocket.accept());
+                        users.newConnection(serverSocket.accept());
                     }catch(Exception e){
                         System.out.println("SocketListener create error");
                     }
@@ -47,49 +47,90 @@ public class MERAserver {
 
             public UserList() {
                 users = new LinkedList<ActiveUser>();
+
             }
 
-            public void addNewUser(Socket socket){
-                ActiveUser newUser = new ActiveUser(socket);
-                users.add(newUser);
-                new Thread(newUser).start();
+            public void newConnection(Socket socket){
+                new Thread(new ActiveUser(socket)).start();
             }
-            public void deleteUser(ActiveUser a){
+
+            void addUser(ActiveUser newUser){
+                byte[] byteArray;
+                byteArray = new byte[20];//count/2=length
+                try{
+                    newUser.is.read(byteArray);
+                    newUser.userName = new String(byteArray, "UTF-8").trim();
+                }catch(Exception e){
+                    System.out.println("NAMEexception");
+                }
+
+                for(ActiveUser i:users){
+                    try{
+                        i.os.write("user".getBytes());
+                        i.os.write(newUser.userName.getBytes());
+                        System.out.println("newUser added");
+                    }catch(Exception e){
+                        System.out.println("newUser was not add to "+i.userName);
+                    }
+                }
+                users.add(newUser);
+                for(ActiveUser i:users){
+                    try{
+                        newUser.os.write("user".getBytes());
+                        newUser.os.flush();
+                        newUser.os.write(i.userName.getBytes());
+                        System.out.println("user to newUser added");
+                    }catch(Exception e){
+                        System.out.println(i.userName+" was not added to newUser");
+                    }
+                }
+                System.out.println("alladded");
+            }
+            public void deleteUser(ActiveUser u){
                 ;
             }
 
             class ActiveUser implements Runnable{
                 String userName;
                 Socket socket;
-                BufferedInputStream is;
-                BufferedOutputStream os;
+                InputStream is;
+                OutputStream os;
                 ActiveUser(Socket userSocket){
                     try{
                         socket = userSocket;
-                        is = new BufferedInputStream(socket.getInputStream());
-                        os = new BufferedOutputStream(socket.getOutputStream());
+                        is = socket.getInputStream();
+                        os = socket.getOutputStream();
                     }catch(Exception e){
                         System.out.println("ActiveUser Constructor Error");
                     }
                 }
                 public void run(){
-                    try{
-                        byte[] byteArray = new byte[4];//count/2=length
-                        is.read(byteArray);
-                        String key = new String(byteArray, "UTF-8").trim();
-                        switch(key){
-                            case "user":
-                                System.out.println("user");;
-                                break;
-                            case "del":
-                                ;
-                                break;
-                            case "file":
-                                ;
-                                break;
+                    byte[] byteArray;
+                    while(true){
+                        try{
+                            byteArray = new byte[4];//count/2=length
+                            is.read(byteArray);
+                            String key = new String(byteArray, "UTF-8").trim();
+                            switch(key){
+                                case "user":
+                                    System.out.println("user");
+                                    addUser(this);
+                                    break;
+                                case "del":
+                                    System.out.println("del");
+                                    ;
+                                    break;
+                                case "file":
+                                    System.out.println("file");
+                                    ;
+                                    break;
+                                default:
+                                    System.out.println("def");
+                                    break;
+                            }
+                        }catch(Exception e){
+                            System.out.println("ReadKeyException");
                         }
-                    }catch(Exception e){
-                        System.out.println("ReadKeyException");
                     }
                 }
             }

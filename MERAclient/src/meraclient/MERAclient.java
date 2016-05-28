@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,8 +23,8 @@ import javafx.stage.Stage;
 public class MERAclient extends Application{
     Socket socket;
 
-    BufferedInputStream is;
-    BufferedOutputStream os;
+    InputStream is;
+    OutputStream os;
     //BufferedInputStream fis;
     //BufferedOutputStream fos;
 
@@ -110,6 +112,7 @@ public class MERAclient extends Application{
         primaryStage.setScene(scene);
         primaryStage.show();
     }
+
     public static void main(String[] args){
         launch(args);
     }
@@ -117,16 +120,51 @@ public class MERAclient extends Application{
     void connect(){
         try {
                 socket = new Socket(ip, 8080);
-                is = new BufferedInputStream(socket.getInputStream());
-                os = new BufferedOutputStream(socket.getOutputStream());
+                is =  socket.getInputStream();
+                os =  socket.getOutputStream();
 
                 os.write("user".getBytes());
-                os.flush();
                 os.write(userName.getBytes());
-                os.flush();
+
                 connection=true;
+                new Thread(new Connection()).start();
             } catch (IOException ex) {
                 System.out.println("Connection problem");
             }
     }
+
+    class Connection implements Runnable{
+        public void run(){
+            System.out.println("Connection is running");
+            byte[] byteArray;
+            while(true){
+                    try{
+                        byteArray = new byte[4];//count/2=length
+                        is.read(byteArray);
+                        String key = new String(byteArray, "UTF-8").trim();
+                        switch(key){
+                            case "user":
+                                System.out.println("userww");
+                                byteArray = new byte[4];
+                                is.read(byteArray);
+                                System.out.println(new String(byteArray, "UTF-8").trim());
+                                //is.read(byteArray);
+                                break;
+                            case "del":
+                                System.out.println("del");
+                                break;
+                            case "file":
+                                System.out.println("file");
+                                break;
+                            default:
+                                System.out.println("def");
+                                break;
+                        }
+                    }catch(Exception e){
+                        System.out.println("ReadKeyException");
+                    }
+            }
+        }
+    }
+
 }
