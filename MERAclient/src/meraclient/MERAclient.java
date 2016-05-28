@@ -28,13 +28,18 @@ public class MERAclient extends Application{
 
     File upLoadFile;
     File downLoadDirectory;
+    String userName;
+    String ip ="localhost";
+
+    Boolean connection = false;
 
     public void start(Stage primaryStage){
         String badStyle = "-fx-base: salmon";
         String goodStyle = "-fx-base: lightgreen";
 
+        TextField userNameTF = new TextField();//подсказку
         HBox ipHBmain = new HBox();
-            TextField ipTF = new TextField("localhost");
+            TextField ipTF = new TextField("localhost");//подсказку
             Button ipBTN = new Button("Подключиться");
             ipHBmain.getChildren().addAll(ipTF, ipBTN);
 
@@ -57,23 +62,31 @@ public class MERAclient extends Application{
             root.setPadding(new Insets(10, 10, 10, 10));
             root.setHgap(5);
             root.setVgap(30);
-        GridPane.setConstraints(ipHBmain, 0, 0);
-        GridPane.setConstraints(unLoadVBmain, 0, 1);
-        GridPane.setConstraints(downLoadVBmain, 0, 2);
+
+        GridPane.setConstraints(userNameTF, 0, 0);
+        GridPane.setConstraints(ipHBmain, 0, 1);
+        GridPane.setConstraints(unLoadVBmain, 0, 2);
+        GridPane.setConstraints(downLoadVBmain, 0, 3);
 
 
-        root.getChildren().addAll(ipHBmain, unLoadVBmain, downLoadVBmain);
+        root.getChildren().addAll(userNameTF, ipHBmain, unLoadVBmain, downLoadVBmain);
 ////////////////////////////////////////////////////////////////////////////
+        userNameTF.textProperty().addListener(event->{
+            userName = userNameTF.getText();
+        });
+
+        ipTF.textProperty().addListener(event->{
+            ip = ipTF.getText();
+        });
 
         ipBTN.setOnAction(event->{//при переподключении должно все ресетаться
-            try{
-                socket = new Socket(ipTF.getText(), 8080);
+            connect();
+            if(connection){
                 ipTF.setStyle(goodStyle);
                 unLoadVBmain.setDisable(false);
                     unLoadSendBTN.setDisable(true);
                 downLoadVBmain.setDisable(false);
-                online();
-            }catch (IOException ex){
+            }else{
                 ipTF.setStyle(badStyle);
                 unLoadVBmain.setDisable(true);
                 downLoadVBmain.setDisable(true);
@@ -96,49 +109,24 @@ public class MERAclient extends Application{
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.show();
-//        try {
-//            int count;
-//            byte[] byteArray = new byte[8192];
-//            while ((count = fis.read(byteArray)) != -1){
-//                System.out.println(count);
-//                fos.write(byteArray,0,count);
-//                fos.flush();
-//            }
-//        } catch (IOException ex) {
-//            System.out.println("apapapa");;
-//    }
-
     }
     public static void main(String[] args){
         launch(args);
     }
 
-    void online(){
-        new Thread(new ServerListener()).start();
-    }
-
-    class ServerListener implements Runnable{
-        ServerListener(){
-            try {
+    void connect(){
+        try {
+                socket = new Socket(ip, 8080);
                 is = new BufferedInputStream(socket.getInputStream());
                 os = new BufferedOutputStream(socket.getOutputStream());
+
+                os.write("user".getBytes());
+                os.flush();
+                os.write(userName.getBytes());
+                os.flush();
+                connection=true;
             } catch (IOException ex) {
-                System.out.println("Streams are bad");
+                System.out.println("Connection problem");
             }
-        }
-        public void run(){
-            System.out.println("run");
-            while(true){
-                try{
-                    int count;
-                    byte[] byteArray = new byte[1];
-                    while ((count = is.read(byteArray)) != -1){
-                        System.out.println(new String(byteArray, "UTF-8"));
-                    }
-                } catch (IOException ex) {
-                    System.out.println("clclclcl");;
-                }
-            }
-        }
     }
 }

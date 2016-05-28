@@ -50,11 +50,16 @@ public class MERAserver {
             }
 
             public void addNewUser(Socket socket){
-                users.add(new ActiveUser(socket));
+                ActiveUser newUser = new ActiveUser(socket);
+                users.add(newUser);
+                new Thread(newUser).start();
+            }
+            public void deleteUser(ActiveUser a){
+                ;
             }
 
-
             class ActiveUser implements Runnable{
+                String userName;
                 Socket socket;
                 BufferedInputStream is;
                 BufferedOutputStream os;
@@ -63,21 +68,29 @@ public class MERAserver {
                         socket = userSocket;
                         is = new BufferedInputStream(socket.getInputStream());
                         os = new BufferedOutputStream(socket.getOutputStream());
-                        run();
-                    System.out.println("User has been conected");
                     }catch(Exception e){
                         System.out.println("ActiveUser Constructor Error");
                     }
                 }
                 public void run(){
-                    String s = "i am new";
-                    while(true){
-                    try {
-                        os.write("1".getBytes());
-                        //os.flush();
-                    } catch (IOException ex) {
-                        System.out.println("apapapa");
-                    }}
+                    try{
+                        byte[] byteArray = new byte[4];//count/2=length
+                        is.read(byteArray);
+                        String key = new String(byteArray, "UTF-8").trim();
+                        switch(key){
+                            case "user":
+                                System.out.println("user");;
+                                break;
+                            case "del":
+                                ;
+                                break;
+                            case "file":
+                                ;
+                                break;
+                        }
+                    }catch(Exception e){
+                        System.out.println("ReadKeyException");
+                    }
                 }
             }
         }
