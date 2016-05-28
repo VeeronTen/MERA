@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -32,12 +33,15 @@ public class MERAclient extends Application{
     File downLoadDirectory;
     String userName;
     String ip ="localhost";
+    VBox eventVB;
 
     Boolean connection = false;
 
     public void start(Stage primaryStage){
         String badStyle = "-fx-base: salmon";
         String goodStyle = "-fx-base: lightgreen";
+
+        eventVB = new VBox();
 
         TextField userNameTF = new TextField();//подсказку
         HBox ipHBmain = new HBox();
@@ -65,13 +69,13 @@ public class MERAclient extends Application{
             root.setHgap(5);
             root.setVgap(30);
 
-        GridPane.setConstraints(userNameTF, 0, 0);
+        GridPane.setConstraints(userNameTF, 0, 0); GridPane.setConstraints(eventVB, 1, 0);
         GridPane.setConstraints(ipHBmain, 0, 1);
         GridPane.setConstraints(unLoadVBmain, 0, 2);
         GridPane.setConstraints(downLoadVBmain, 0, 3);
 
 
-        root.getChildren().addAll(userNameTF, ipHBmain, unLoadVBmain, downLoadVBmain);
+        root.getChildren().addAll(eventVB, userNameTF, ipHBmain, unLoadVBmain, downLoadVBmain);
 ////////////////////////////////////////////////////////////////////////////
         userNameTF.textProperty().addListener(event->{
             userName = userNameTF.getText();
@@ -127,7 +131,11 @@ public class MERAclient extends Application{
                 os.write(userName.getBytes());
 
                 connection=true;
-                new Thread(new Connection()).start();
+
+                Thread conThread = new Thread(new Connection());
+                conThread.setDaemon(true);
+                conThread.start();
+
             } catch (IOException ex) {
                 System.out.println("Connection problem");
             }
@@ -145,11 +153,32 @@ public class MERAclient extends Application{
                             case "user":
                                 byteArray = new byte[20];
                                 is.read(byteArray);
-                                System.out.println(new String(byteArray, "UTF-8"));
-                                //is.read(byteArray);
+                                Label l = new Label(new String(byteArray, "UTF-8").trim());
+                                Platform.runLater(new Runnable(){
+                                    public void run(){
+                                        try{
+                                            eventVB.getChildren().add(l);
+                                        }catch(Exception e){
+                                            ;
+                                        }
+                                    }
+                                });
+
                                 break;
                             case "del":
                                 System.out.println("del");
+//                                byteArray = new byte[20];
+//                                is.read(byteArray);
+//                                Label l = new Label(new String(byteArray, "UTF-8").trim());
+//                                Platform.runLater(new Runnable(){
+//                                    public void run(){
+//                                        try{
+//                                            eventVB.getChildren().add(l);
+//                                        }catch(Exception e){
+//                                            ;
+//                                        }
+//                                    }
+//                                });
                                 break;
                             case "file":
                                 System.out.println("file");

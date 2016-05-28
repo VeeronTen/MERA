@@ -83,7 +83,16 @@ public class MERAserver {
                 }
             }
             public void deleteUser(ActiveUser u){
-                ;
+                users.remove(users.indexOf(u));
+                for(ActiveUser i : users){
+                    try{
+                        i.os.write("del".getBytes());
+                        i.os.write(u.userName.getBytes());
+                    }catch(Exception e){
+                        System.out.println("delete user problem");
+                    }
+                }
+
             }
 
             class ActiveUser implements Runnable{
@@ -102,8 +111,8 @@ public class MERAserver {
                 }
                 public void run(){
                     byte[] byteArray;
-                    while(true){
-                        try{
+                    try{
+                        while(true){
                             byteArray = new byte[4];//count/2=length
                             is.read(byteArray);
                             String key = new String(byteArray, "UTF-8").trim();
@@ -123,9 +132,12 @@ public class MERAserver {
                                     System.out.println("def");
                                     break;
                             }
-                        }catch(Exception e){
-                            System.out.println("ReadKeyException");
                         }
+                    }catch(Exception e){
+                        System.out.println("1");
+                        deleteUser(this);
+                        System.out.println("2");
+                        Thread.currentThread().interrupt();
                     }
                 }
             }
