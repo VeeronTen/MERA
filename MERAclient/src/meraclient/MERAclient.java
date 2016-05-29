@@ -1,8 +1,10 @@
 package meraclient;
 
+import com.sun.scenario.effect.Merge;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,6 +33,7 @@ public class MERAclient extends Application{
 
     File upLoadFile;
     File downLoadDirectory;
+
     String userName;
     String ip ="localhost";
 
@@ -148,8 +151,29 @@ public class MERAclient extends Application{
     void sendFile(){
         try{
             os.write("file".getBytes());
-            os.write("first first, i am the second".getBytes());
-            //os.write(upLoadFile.getName().getBytes());
+            byte[] nameWithSpace = new byte[520];
+
+            byte[] name = upLoadFile.getName().getBytes();
+            byte[] space = new byte[520-upLoadFile.getName().length()];
+
+            System.arraycopy(name, 0, nameWithSpace, 0, name.length);
+            System.arraycopy(space, 0, nameWithSpace, name.length, space.length);
+
+            os.write(nameWithSpace);
+            BufferedInputStream fileLoader = new BufferedInputStream(new FileInputStream(upLoadFile));
+            //BufferedOutputStream fileSender = new BufferedOutputStream(os);
+
+            int count;
+            byte[] buffer = new byte[8192];
+
+            while((count=fileLoader.read(buffer))!=-1){
+
+                os.write(buffer, 0, count);
+                //if(count!=8192)
+                    System.out.println(count);
+            }
+            System.out.println(count);
+            //fileSender.flush();
         }catch(Exception e){
             System.out.println("sendFile problem");
         }

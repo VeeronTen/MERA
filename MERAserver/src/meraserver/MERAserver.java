@@ -2,6 +2,8 @@ package meraserver;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,9 +16,11 @@ import java.util.logging.Logger;
 public class MERAserver {
     UserList users;
     ServerSocket serverSocket;
-    String bufferPath;
+    String bufferPath="C:\\MERAserver\\";
+
     MERAserver(){
         try{
+            new File(bufferPath).mkdir();
             users = new UserList();
             serverSocket = new ServerSocket(8080);
         }catch(Exception e){
@@ -96,15 +100,47 @@ public class MERAserver {
 
             }
             void sendFileFrom(ActiveUser sender){
-                byte[] buffer = new byte[30];
+                byte[] buffer = new byte[520];//max length of filename in Windows OS - 260. 2 bytes - char size.
                 try{
                     sender.is.read(buffer);
-                    System.out.println(new String(buffer, "UTF-8"));
+                    String fileName = new String(buffer, "UTF-8").trim();
+                    System.out.println(bufferPath+fileName);
+                    readFileFrom(sender, fileName);
+
                 }catch(Exception e){
-                    System.out.println("it is so bad");
+                    System.out.println("sendFile problem");
                 }
+
+
             }
 
+            void readFileFrom(ActiveUser sender, String fileName){
+                int count;
+                byte[] buffer = new byte[8192];
+
+                try{
+                    FileOutputStream fo = new FileOutputStream(bufferPath+fileName);
+                    while((count = sender.is.read(buffer))!=-1){
+                        if(count!=8192){
+                            System.out.println(count);
+                            sender.socket.setSoTimeout(1000);
+                        }
+                        fo.write(buffer, 0, count);
+                        //if(count!=8192)
+                         //   break;
+                    }
+                    //sender.socket.getSoTimeout()
+                    //System.out.println(count);
+                }catch(Exception e){
+                    System.out.println("readFileFrom problem");
+                }finally{
+                    try{
+                        sender.socket.setSoTimeout(0);
+                    }catch(Exception e){
+                        System.out.println("setSoTimeout(0) problem");
+                    }
+                }
+            }
 
             class ActiveUser implements Runnable{
                 String userName;
