@@ -33,6 +33,7 @@ public class MERAclient extends Application{
     File downLoadDirectory;
     String userName;
     String ip ="localhost";
+
     VBox eventVB;
 
     Boolean connection = false;
@@ -153,11 +154,12 @@ public class MERAclient extends Application{
                             case "user":
                                 byteArray = new byte[20];
                                 is.read(byteArray);
-                                Label l = new Label(new String(byteArray, "UTF-8").trim());
+                                Label newLabel = new Label(new String(byteArray, "UTF-8").trim());
+
                                 Platform.runLater(new Runnable(){
                                     public void run(){
                                         try{
-                                            eventVB.getChildren().add(l);
+                                            eventVB.getChildren().add(newLabel);
                                         }catch(Exception e){
                                             ;
                                         }
@@ -166,19 +168,25 @@ public class MERAclient extends Application{
 
                                 break;
                             case "del":
-                                System.out.println("del");
-//                                byteArray = new byte[20];
-//                                is.read(byteArray);
-//                                Label l = new Label(new String(byteArray, "UTF-8").trim());
-//                                Platform.runLater(new Runnable(){
-//                                    public void run(){
-//                                        try{
-//                                            eventVB.getChildren().add(l);
-//                                        }catch(Exception e){
-//                                            ;
-//                                        }
-//                                    }
-//                                });
+                                byteArray = new byte[20];
+                                is.read(byteArray);
+                                String delName = new String(byteArray, "UTF-8").trim();
+
+                                Object[] events = eventVB.getChildren().toArray();
+                                for(Object o : events)
+                                    if(((Label)o).getText().equals(delName)){
+                                        Label delLabel =(Label)o;
+
+                                        Platform.runLater(new Runnable(){
+                                            public void run(){
+                                                try{
+                                                    eventVB.getChildren().remove(delLabel);
+                                                }catch(Exception e){
+                                                    ;
+                                                }
+                                            }
+                                        });
+                                    }
                                 break;
                             case "file":
                                 System.out.println("file");
