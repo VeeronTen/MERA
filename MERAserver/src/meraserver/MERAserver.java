@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 public class MERAserver {
     UserList users;
     ServerSocket serverSocket;
+    String bufferPath;
     MERAserver(){
         try{
             users = new UserList();
@@ -82,18 +83,28 @@ public class MERAserver {
                     }
                 }
             }
-            public void deleteUser(ActiveUser u){
-                users.remove(users.indexOf(u));
+            void deleteUser(ActiveUser uesrForDel){
+                users.remove(users.indexOf(uesrForDel));
                 for(ActiveUser i : users){
                     try{
                         i.os.write("del".getBytes());
-                        i.os.write(u.userName.getBytes());
+                        i.os.write(uesrForDel.userName.getBytes());
                     }catch(Exception e){
                         System.out.println("delete user problem");
                     }
                 }
 
             }
+            void sendFileFrom(ActiveUser sender){
+                byte[] buffer = new byte[30];
+                try{
+                    sender.is.read(buffer);
+                    System.out.println(new String(buffer, "UTF-8"));
+                }catch(Exception e){
+                    System.out.println("it is so bad");
+                }
+            }
+
 
             class ActiveUser implements Runnable{
                 String userName;
@@ -121,12 +132,11 @@ public class MERAserver {
                                     addUser(this);
                                     break;
                                 case "del":
-                                    System.out.println("del");
-                                    ;
+                                    deleteUser(this);
                                     break;
                                 case "file":
                                     System.out.println("file");
-                                    ;
+                                    sendFileFrom(this);
                                     break;
                                 default:
                                     System.out.println("def");
@@ -134,9 +144,7 @@ public class MERAserver {
                             }
                         }
                     }catch(Exception e){
-                        System.out.println("1");
                         deleteUser(this);
-                        System.out.println("2");
                         Thread.currentThread().interrupt();
                     }
                 }

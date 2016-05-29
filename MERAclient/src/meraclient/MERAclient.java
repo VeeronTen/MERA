@@ -36,7 +36,7 @@ public class MERAclient extends Application{
 
     VBox eventVB;
 
-    Boolean connection = false;
+    Boolean connected = false;
 
     public void start(Stage primaryStage){
         String badStyle = "-fx-base: salmon";
@@ -88,10 +88,10 @@ public class MERAclient extends Application{
 
         ipBTN.setOnAction(event->{//при переподключении должно все ресетаться
             connect();
-            if(connection){
+            if(connected){
                 ipTF.setStyle(goodStyle);
                 unLoadVBmain.setDisable(false);
-                    unLoadSendBTN.setDisable(true);
+                    //unLoadSendBTN.setDisable(true);
                 downLoadVBmain.setDisable(false);
             }else{
                 ipTF.setStyle(badStyle);
@@ -108,6 +108,9 @@ public class MERAclient extends Application{
             upLoadFile = new File(unLoadPathLBL.getText());
         });
 
+        unLoadSendBTN.setOnAction(event->{
+            sendFile();
+        });
 
         downLoadChoiceBTN.setOnAction(event->{
             downLoadManager manager = new downLoadManager(downLoadPathLBL);
@@ -131,7 +134,7 @@ public class MERAclient extends Application{
                 os.write("user".getBytes());
                 os.write(userName.getBytes());
 
-                connection=true;
+                connected=true;
 
                 Thread conThread = new Thread(new Connection());
                 conThread.setDaemon(true);
@@ -142,6 +145,15 @@ public class MERAclient extends Application{
             }
     }
 
+    void sendFile(){
+        try{
+            os.write("file".getBytes());
+            os.write("first first, i am the second".getBytes());
+            //os.write(upLoadFile.getName().getBytes());
+        }catch(Exception e){
+            System.out.println("sendFile problem");
+        }
+    }
     class Connection implements Runnable{
         public void run(){
             byte[] byteArray;
