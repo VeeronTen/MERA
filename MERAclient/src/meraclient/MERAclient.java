@@ -220,18 +220,6 @@ public class MERAclient extends Application{
                             name = new String(byteArray, "UTF-8").trim();
 
                             MNGfileEvents.newEvent(name, file);
-                            //MNGfileEvents.delEvent(name, file);
-//                            Button newButton = new Button(name+" прислал "+file);
-//                            Platform.runLater(new Runnable(){
-//                                public void run(){
-//                                    try{
-//                                        eventsVB.getChildren().add(newButton);
-//                                    }catch(Exception e){
-//                                        ;
-//                                    }
-//                                }
-//                            });
-
                             break;
                         default:
                             System.out.println("def");
@@ -281,7 +269,6 @@ public class MERAclient extends Application{
                             }
                         });
                     }
-
         }
 
     }

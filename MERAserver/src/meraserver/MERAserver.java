@@ -53,7 +53,6 @@ public class MERAserver {
 
             public UserList() {
                 users = new LinkedList<ActiveUser>();
-
             }
 
             public void newConnection(Socket socket){
