@@ -166,14 +166,9 @@ public class MERAclient extends Application{
             int count;
             byte[] buffer = new byte[8192];
 
-            while((count=fileLoader.read(buffer))!=-1){
-
+            while((count=fileLoader.read(buffer))!=-1)
                 os.write(buffer, 0, count);
-                //if(count!=8192)
-                    System.out.println(count);
-            }
-            System.out.println(count);
-            //fileSender.flush();
+
         }catch(Exception e){
             System.out.println("sendFile problem");
         }

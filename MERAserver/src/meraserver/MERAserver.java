@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -121,24 +122,21 @@ public class MERAserver {
                 try{
                     FileOutputStream fo = new FileOutputStream(bufferPath+fileName);
                     while((count = sender.is.read(buffer))!=-1){
-                        if(count!=8192){
-                            System.out.println(count);
+                        if(sender.socket.getSoTimeout()==0 && count!=8192){
+                            System.out.println("setSoTimeout");
                             sender.socket.setSoTimeout(1000);
                         }
                         fo.write(buffer, 0, count);
-                        //if(count!=8192)
-                         //   break;
                     }
-                    //sender.socket.getSoTimeout()
-                    //System.out.println(count);
-                }catch(Exception e){
-                    System.out.println("readFileFrom problem");
-                }finally{
+                }catch(SocketTimeoutException se){
                     try{
+                        System.out.println("file was been uploaded");
                         sender.socket.setSoTimeout(0);
                     }catch(Exception e){
                         System.out.println("setSoTimeout(0) problem");
                     }
+                }catch(Exception e){
+                    System.out.println("readFileFrom problem");
                 }
             }
 
