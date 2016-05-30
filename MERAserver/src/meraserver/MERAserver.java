@@ -60,7 +60,7 @@ public class MERAserver {
                 new Thread(new ActiveUser(socket)).start();
             }
 
-            void addUser(ActiveUser newUser){
+            void addUserToUsers(ActiveUser newUser){
                 byte[] byteArray;
                 byteArray = new byte[20];//count/2=length
                 try{
@@ -70,35 +70,18 @@ public class MERAserver {
                     System.out.println("NAMEexception");
                 }
 
-                for(ActiveUser i:users){
-                    try{
-                        i.os.write("user".getBytes());
-                        i.os.write(newUser.userName.getBytes());
-                    }catch(Exception e){
-                        System.out.println("newUser was not add to "+i.userName);
-                    }
-                }
-                users.add(newUser);
-                for(ActiveUser i:users){
-                    try{
-                        newUser.os.write("user".getBytes());
-                        newUser.os.write(i.userName.getBytes());
-                    }catch(Exception e){
-                        System.out.println(i.userName+" was not added to newUser");
-                    }
-                }
-            }
-            void deleteUser(ActiveUser uesrForDel){
-                users.remove(users.indexOf(uesrForDel));
-                for(ActiveUser i : users){
-                    try{
-                        i.os.write("del".getBytes());
-                        i.os.write(uesrForDel.userName.getBytes());
-                    }catch(Exception e){
-                        System.out.println("delete user problem");
-                    }
-                }
+                for(ActiveUser i:users)
+                        i.writeAboutNewUser(newUser.userName);
 
+
+                users.add(newUser);
+                for(ActiveUser i:users)
+                        newUser.writeAboutNewUser(i.userName);
+            }
+            void deleteUserFromUsers(ActiveUser userForDel){
+                users.remove(users.indexOf(userForDel));
+                for(ActiveUser i : users)
+                        i.writeAboudDelUser(userForDel.userName);
             }
             void sendFileFrom(ActiveUser sender){
                 byte[] buffer = new byte[520];//max length of filename in Windows OS - 260. 2 bytes - char size.
@@ -108,6 +91,13 @@ public class MERAserver {
                     System.out.println(bufferPath+fileName);
                     readFileFrom(sender, fileName);
 
+                    for(ActiveUser i : users){
+                        //if(i!=sender){
+                        i.os.write("file".getBytes());
+                        i.os.write(buffer);
+                        i.os.write(sender.userName.getBytes());
+
+                    }
                 }catch(Exception e){
                     System.out.println("sendFile problem");
                 }
@@ -160,13 +150,13 @@ public class MERAserver {
                         while(true){
                             byteArray = new byte[4];//count/2=length
                             is.read(byteArray);
-                            String key = new String(byteArray, "UTF-8").trim();
+                            String key = new String(byteArray, "UTF-8");//.trim();
                             switch(key){
                                 case "user":
-                                    addUser(this);
+                                    addUserToUsers(this);
                                     break;
-                                case "del":
-                                    deleteUser(this);
+                                case "delt":
+                                    deleteUserFromUsers(this);
                                     break;
                                 case "file":
                                     System.out.println("file");
@@ -178,8 +168,26 @@ public class MERAserver {
                             }
                         }
                     }catch(Exception e){
-                        deleteUser(this);
+                        deleteUserFromUsers(this);
                         Thread.currentThread().interrupt();
+                    }
+                }
+
+                synchronized void writeAboutNewUser(String nameNewUser){
+                    try{
+                    os.write("user".getBytes());
+                    os.write(nameNewUser.getBytes());
+                    }catch(Exception e){
+                        System.out.println(userName+": writeAboutNewUser problem");
+                    }
+                }
+
+                synchronized void writeAboudDelUser(String nameDelUser){
+                    try{
+                   os.write("delt".getBytes());
+                   os.write(nameDelUser.getBytes());
+                    }catch(Exception e){
+                        System.out.println(userName+": writeAboutDelUser problem");
                     }
                 }
             }

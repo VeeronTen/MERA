@@ -37,7 +37,11 @@ public class MERAclient extends Application{
     String userName;
     String ip ="localhost";
 
-    VBox eventVB;
+    VBox usersVB;
+    VBox eventsVB;
+
+    fileEventsManager MNGfileEvents = new fileEventsManager();
+    usersInListManager MNGusers = new usersInListManager();
 
     Boolean connected = false;
 
@@ -45,7 +49,7 @@ public class MERAclient extends Application{
         String badStyle = "-fx-base: salmon";
         String goodStyle = "-fx-base: lightgreen";
 
-        eventVB = new VBox();
+        usersVB = new VBox();
 
         TextField userNameTF = new TextField();//подсказку
         HBox ipHBmain = new HBox();
@@ -68,18 +72,21 @@ public class MERAclient extends Application{
             downLoadVBmain.getChildren().addAll(downLoadPathLBL, downLoadChoiceBTN);
             //downLoadVBmain.setDisable(true);
 
+        eventsVB = new VBox();
+
         GridPane root = new GridPane();
             root.setPadding(new Insets(10, 10, 10, 10));
             root.setHgap(5);
             root.setVgap(30);
 
-        GridPane.setConstraints(userNameTF, 0, 0); GridPane.setConstraints(eventVB, 1, 0);
+        GridPane.setConstraints(userNameTF, 0, 0); GridPane.setConstraints(usersVB, 1, 0);
         GridPane.setConstraints(ipHBmain, 0, 1);
         GridPane.setConstraints(unLoadVBmain, 0, 2);
         GridPane.setConstraints(downLoadVBmain, 0, 3);
+        GridPane.setConstraints(eventsVB, 0, 4);
 
 
-        root.getChildren().addAll(eventVB, userNameTF, ipHBmain, unLoadVBmain, downLoadVBmain);
+        root.getChildren().addAll(usersVB, userNameTF, ipHBmain, unLoadVBmain, downLoadVBmain, eventsVB);
 ////////////////////////////////////////////////////////////////////////////
         userNameTF.textProperty().addListener(event->{
             userName = userNameTF.getText();
@@ -112,7 +119,11 @@ public class MERAclient extends Application{
         });
 
         unLoadSendBTN.setOnAction(event->{
-            sendFile();
+            new Thread(new Runnable() {
+                public void run() {
+                    sendFile();
+                }
+            }).start();
         });
 
         downLoadChoiceBTN.setOnAction(event->{
@@ -173,64 +184,137 @@ public class MERAclient extends Application{
             System.out.println("sendFile problem");
         }
     }
+
     class Connection implements Runnable{
         public void run(){
             byte[] byteArray;
             while(true){
-                    try{
-                        byteArray = new byte[4];//count/2=length
-                        is.read(byteArray);
-                        String key = new String(byteArray, "UTF-8").trim();
-                        switch(key){
-                            case "user":
-                                byteArray = new byte[20];
-                                is.read(byteArray);
-                                Label newLabel = new Label(new String(byteArray, "UTF-8").trim());
+                try{
+                    byteArray = new byte[4];//count/2=length
+                    is.read(byteArray);
+                    String key = new String(byteArray, "UTF-8");//.trim();
+                    switch(key){
+                        case "user":
+                            byteArray = new byte[20];
+                            is.read(byteArray);
+                            String newUserName = new String(byteArray, "UTF-8").trim();
+                            MNGusers.newUser(newUserName);
+                            break;
+                        case "delt":
+                            byteArray = new byte[20];
+                            is.read(byteArray);
+                            String delName = new String(byteArray, "UTF-8").trim();
+                            MNGusers.delUser(delName);
+                            break;
+                        case "file":
+                            String name;
+                            String file;
+                            System.out.println("file");
 
-                                Platform.runLater(new Runnable(){
-                                    public void run(){
-                                        try{
-                                            eventVB.getChildren().add(newLabel);
-                                        }catch(Exception e){
-                                            ;
-                                        }
-                                    }
-                                });
+                            byteArray = new byte[520];
+                            is.read(byteArray);
+                            file = new String(byteArray, "UTF-8").trim();
 
-                                break;
-                            case "del":
-                                byteArray = new byte[20];
-                                is.read(byteArray);
-                                String delName = new String(byteArray, "UTF-8").trim();
+                            byteArray = new byte[20];
+                            is.read(byteArray);
+                            name = new String(byteArray, "UTF-8").trim();
 
-                                Object[] events = eventVB.getChildren().toArray();
-                                for(Object o : events)
-                                    if(((Label)o).getText().equals(delName)){
-                                        Label delLabel =(Label)o;
+                            MNGfileEvents.newEvent(name, file);
+                            //MNGfileEvents.delEvent(name, file);
+//                            Button newButton = new Button(name+" прислал "+file);
+//                            Platform.runLater(new Runnable(){
+//                                public void run(){
+//                                    try{
+//                                        eventsVB.getChildren().add(newButton);
+//                                    }catch(Exception e){
+//                                        ;
+//                                    }
+//                                }
+//                            });
 
-                                        Platform.runLater(new Runnable(){
-                                            public void run(){
-                                                try{
-                                                    eventVB.getChildren().remove(delLabel);
-                                                }catch(Exception e){
-                                                    ;
-                                                }
-                                            }
-                                        });
-                                    }
-                                break;
-                            case "file":
-                                System.out.println("file");
-                                break;
-                            default:
-                                System.out.println("def");
-                                break;
-                        }
-                    }catch(Exception e){
-                        System.out.println("ReadKeyException");
+                            break;
+                        default:
+                            System.out.println("def");
+                            break;
                     }
+                }catch(Exception e){
+                    System.out.println("ReadKeyException");
+                }
             }
         }
     }
 
+    class fileEventsManager{
+
+        void newEvent(String userName, String fileName){
+            HBox event = new HBox();
+            Label nameLBL = new Label(userName);
+            Button okBTN = new Button(fileName);
+            Button skipBTN = new Button("Отказаться");
+
+            event.getChildren().addAll(nameLBL, okBTN, skipBTN);
+
+            Platform.runLater(new Runnable(){
+                public void run(){
+                    try{
+                        eventsVB.getChildren().add(event);
+                    }catch(Exception e){
+                        System.out.println("fileEventsManager.newEvent() problem");
+                    }
+                }
+            });
+            System.out.println(userName+" "+fileName);
+        }
+        void delEvent(String userName, String fileName){
+        Object[] events = eventsVB.getChildren().toArray();
+            for(Object o : events)
+                if(((Label)((HBox)o).getChildren().get(0)).getText().equals(userName))
+                    if(((Button)((HBox)o).getChildren().get(1)).getText().equals(fileName)){
+                        HBox delHB = (HBox)o;
+                        Platform.runLater(new Runnable(){
+                            public void run(){
+                                try{
+                                    eventsVB.getChildren().remove(o);
+                                }catch(Exception e){
+                                    ;
+                                }
+                            }
+                        });
+                    }
+
+        }
+
+    }
+
+    class usersInListManager{
+        void newUser(String name){
+            Label nameLBL = new Label(name);
+            Platform.runLater(new Runnable(){
+                public void run(){
+                    try{
+                        usersVB.getChildren().add(nameLBL);
+                    }catch(Exception e){
+                        System.out.println("usersInListManager.newUser() problem");
+                    }
+                }
+            });
+        }
+        void delUser(String name){
+            Object[] users = usersVB.getChildren().toArray();
+                for(Object o : users)
+                    if(((Label)o).getText().equals(name)){
+                        Label delLabel =(Label)o;
+
+                        Platform.runLater(new Runnable(){
+                            public void run(){
+                                try{
+                                    usersVB.getChildren().remove(delLabel);
+                                }catch(Exception e){
+                                    ;
+                                }
+                            }
+                        });
+                    }
+        }
+    }
 }
