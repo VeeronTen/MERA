@@ -1,0 +1,8 @@
+tem Restore Info] 
+date: 28.03.2016 
+time: 17:11:12,97 
+ 
+ 
+Recovery_Product=Windows8.1 SP0 64bit Single 
+Recovery_PartNr=FTS:RDVDW81SX64MEM01 
+ 

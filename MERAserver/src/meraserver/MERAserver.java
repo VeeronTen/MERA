@@ -3,6 +3,7 @@ package meraserver;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,11 +52,11 @@ public class MERAserver {
         class UserList{
             private LinkedList<ActiveUser> users;
 
-            public UserList() {
+            UserList() {
                 users = new LinkedList<ActiveUser>();
             }
 
-            public void newConnection(Socket socket){
+            void newConnection(Socket socket){
                 new Thread(new ActiveUser(socket)).start();
             }
 
@@ -69,41 +70,39 @@ public class MERAserver {
                     System.out.println("NAMEexception");
                 }
 
+                users.add(newUser);
                 for(ActiveUser i:users)
+                    if(i!=newUser)
                         i.writeAboutNewUser(newUser.userName);
 
 
-                users.add(newUser);
+
                 for(ActiveUser i:users)
                         newUser.writeAboutNewUser(i.userName);
             }
             void deleteUserFromUsers(ActiveUser userForDel){
                 users.remove(users.indexOf(userForDel));
                 for(ActiveUser i : users)
-                        i.writeAboudDelUser(userForDel.userName);
+                        i.writeAboutDelUser(userForDel.userName);
             }
-            void sendFileFrom(ActiveUser sender){
-                byte[] buffer = new byte[520];//max length of filename in Windows OS - 260. 2 bytes - char size.
+
+            void sendFileEventFrom(ActiveUser sender){
+                byte[] Buffer = new byte[520];//max length of filename in Windows OS - 260. 2 bytes - char size.
                 try{
-                    sender.is.read(buffer);
-                    String fileName = new String(buffer, "UTF-8").trim();
+                    sender.is.read(Buffer);
+                    String fileName = new String(Buffer, "UTF-8").trim();
                     System.out.println(bufferPath+fileName);
                     readFileFrom(sender, fileName);
 
-                    for(ActiveUser i : users){
-                        //if(i!=sender){
-                        i.os.write("file".getBytes());
-                        i.os.write(buffer);
-                        i.os.write(sender.userName.getBytes());
+                    for(ActiveUser i : users)
+                        i.writeAboutNewFile(sender.userName, fileName);
 
-                    }
                 }catch(Exception e){
                     System.out.println("sendFile problem");
                 }
 
 
             }
-
             void readFileFrom(ActiveUser sender, String fileName){
                 int count;
                 byte[] buffer = new byte[8192];
@@ -118,14 +117,15 @@ public class MERAserver {
                         fo.write(buffer, 0, count);
                     }
                 }catch(SocketTimeoutException se){
+                    System.out.println("file was been uploaded");
+                }catch(Exception e){
+                    System.out.println("readFileFrom problem");
+                }finally{
                     try{
-                        System.out.println("file was been uploaded");
-                        sender.socket.setSoTimeout(0);
+                    sender.socket.setSoTimeout(0);
                     }catch(Exception e){
                         System.out.println("setSoTimeout(0) problem");
                     }
-                }catch(Exception e){
-                    System.out.println("readFileFrom problem");
                 }
             }
 
@@ -158,8 +158,10 @@ public class MERAserver {
                                     deleteUserFromUsers(this);
                                     break;
                                 case "file":
-                                    System.out.println("file");
-                                    sendFileFrom(this);
+                                    sendFileEventFrom(this);
+                                    break;
+                                case "acpt":
+                                    writeFile();
                                     break;
                                 default:
                                     System.out.println("def");
@@ -173,21 +175,68 @@ public class MERAserver {
                 }
 
                 synchronized void writeAboutNewUser(String nameNewUser){
+                    System.out.println(userName+" добавляет "+nameNewUser);
                     try{
-                    os.write("user".getBytes());
-                    os.write(nameNewUser.getBytes());
+                        os.write("user".getBytes());
+                        os.write(nameNewUser.getBytes());
                     }catch(Exception e){
                         System.out.println(userName+": writeAboutNewUser problem");
                     }
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ex) {;}
                 }
 
-                synchronized void writeAboudDelUser(String nameDelUser){
+                synchronized void writeAboutDelUser(String nameDelUser){
                     try{
                    os.write("delt".getBytes());
                    os.write(nameDelUser.getBytes());
                     }catch(Exception e){
                         System.out.println(userName+": writeAboutDelUser problem");
                     }
+                }
+
+                synchronized void writeAboutNewFile(String nameSender, String nameNewFile){
+                     try{
+                     //if(i!=sender){
+                    byte[] nameWithSpace = new byte[520];
+
+                    byte[] name = nameNewFile.getBytes();
+                    byte[] space = new byte[520-nameNewFile.getBytes().length];
+
+                    System.arraycopy(name, 0, nameWithSpace, 0, name.length);
+                    System.arraycopy(space, 0, nameWithSpace, name.length, space.length);
+
+                        os.write("file".getBytes());
+                        os.write(nameWithSpace);
+                        os.write(nameSender.getBytes());
+                     }catch(Exception e){
+                         System.out.println(userName+": writeAboutNewFile");
+                     }
+                 }
+
+                synchronized void writeFile(){
+                    System.out.println("WRITE");
+                    try{
+                        byte[] buffer = new byte[520];
+                        is.read(buffer);
+                        String fileName = new String(buffer,"UTF-8").trim();
+                        BufferedInputStream fileLoader = new BufferedInputStream(new FileInputStream(bufferPath+fileName));
+
+                        os.write("acpt".getBytes());
+                        os.write(buffer);
+                        int count;
+                        buffer = new byte[8192];
+
+                        while((count=fileLoader.read(buffer))!=-1)
+                            os.write(buffer, 0, count);
+
+                    }catch(Exception e){
+                        System.out.println("writeFile problem");
+                    }
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ex) {;}
                 }
             }
         }

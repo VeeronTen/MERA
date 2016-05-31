@@ -1,14 +1,17 @@
 package meraclient;
-
+//когда оправляем файл - запретить читать файл
+//при отключнии ресетить все
 import com.sun.scenario.effect.Merge;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
@@ -40,7 +43,6 @@ public class MERAclient extends Application{
     VBox usersVB;
     VBox eventsVB;
 
-    fileEventsManager MNGfileEvents = new fileEventsManager();
     usersInListManager MNGusers = new usersInListManager();
 
     Boolean connected = false;
@@ -129,7 +131,9 @@ public class MERAclient extends Application{
         downLoadChoiceBTN.setOnAction(event->{
             downLoadManager manager = new downLoadManager(downLoadPathLBL);
         });
-
+        downLoadPathLBL.textProperty().addListener(event->{
+            downLoadDirectory = new File(downLoadPathLBL.getText());
+        });
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -172,7 +176,6 @@ public class MERAclient extends Application{
 
             os.write(nameWithSpace);
             BufferedInputStream fileLoader = new BufferedInputStream(new FileInputStream(upLoadFile));
-            //BufferedOutputStream fileSender = new BufferedOutputStream(os);
 
             int count;
             byte[] buffer = new byte[8192];
@@ -182,6 +185,62 @@ public class MERAclient extends Application{
 
         }catch(Exception e){
             System.out.println("sendFile problem");
+        }
+    }
+
+    void readyRead(String fileName){
+        try{
+        os.write("acpt".getBytes());
+
+        byte[] buffer = new byte[520];
+
+        byte[] name = fileName.getBytes();
+        byte[] space = new byte[520-fileName.getBytes().length];
+
+        System.arraycopy(name, 0, buffer, 0, name.length);
+        System.arraycopy(space, 0, buffer, name.length, space.length);
+
+        os.write(buffer);
+        }catch(Exception e){
+            System.out.println("readyRead problem");
+        }
+    }
+    void readFile(){
+
+
+        byte[] buffer = new byte[520];
+        String fileName;
+        try{
+            is.read(buffer);
+            fileName = new String(buffer, "UTF-8").trim();
+                try{
+                    int count;
+                    buffer = new byte[8192];
+                    System.out.println("sssss");
+                    FileOutputStream fo = new FileOutputStream(downLoadDirectory+"\\"+fileName);
+                    while((count = is.read(buffer))!=-1){
+                        System.out.println(count);{
+                        if(socket.getSoTimeout()==0 && count!=8192){
+                            System.out.println("setSoTimeout");
+                            socket.setSoTimeout(1000);
+                        }
+                        fo.write(buffer, 0, count);
+                    }}
+                }catch(SocketTimeoutException se){
+                    System.out.println("file was been downloaded");
+                }catch(Exception e){
+                    System.out.println("read problem");
+                }
+                finally{
+                    try{
+                        System.out.println("0");
+                        socket.setSoTimeout(0);
+                    }catch(Exception e){
+                        System.out.println("setSoTimeout(0) problem");
+                    }
+                }
+        }catch(Exception e){
+            System.out.println("readFile  problem");
         }
     }
 
@@ -219,7 +278,10 @@ public class MERAclient extends Application{
                             is.read(byteArray);
                             name = new String(byteArray, "UTF-8").trim();
 
-                            MNGfileEvents.newEvent(name, file);
+                            new FileEvent(name, file);
+                            break;
+                        case "acpt":
+                            readFile();
                             break;
                         default:
                             System.out.println("def");
@@ -232,20 +294,26 @@ public class MERAclient extends Application{
         }
     }
 
-    class fileEventsManager{
+    class FileEvent{
 
-        void newEvent(String userName, String fileName){
-            HBox event = new HBox();
+        FileEvent(String userName, String fileName){
+            HBox eventHB = new HBox();
             Label nameLBL = new Label(userName);
             Button okBTN = new Button(fileName);
             Button skipBTN = new Button("Отказаться");
 
-            event.getChildren().addAll(nameLBL, okBTN, skipBTN);
+            eventHB.getChildren().addAll(nameLBL, okBTN, skipBTN);
 
+            okBTN.setOnAction(event->{
+                    readyRead(fileName);
+            });
+            skipBTN.setOnAction(event->{
+                delEvent(userName, fileName);
+            });
             Platform.runLater(new Runnable(){
                 public void run(){
                     try{
-                        eventsVB.getChildren().add(event);
+                        eventsVB.getChildren().add(eventHB);
                     }catch(Exception e){
                         System.out.println("fileEventsManager.newEvent() problem");
                     }
@@ -253,7 +321,7 @@ public class MERAclient extends Application{
             });
             System.out.println(userName+" "+fileName);
         }
-        void delEvent(String userName, String fileName){
+        private void delEvent(String userName, String fileName){
         Object[] events = eventsVB.getChildren().toArray();
             for(Object o : events)
                 if(((Label)((HBox)o).getChildren().get(0)).getText().equals(userName))
@@ -275,6 +343,7 @@ public class MERAclient extends Application{
 
     class usersInListManager{
         void newUser(String name){
+            System.out.println(userName +" add "+name);
             Label nameLBL = new Label(name);
             Platform.runLater(new Runnable(){
                 public void run(){
