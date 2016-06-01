@@ -1,21 +1,17 @@
 package meraserver;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.LinkedList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public class MERAserver {
+public class MERAserver implements Runnable{
     UserList users;
     ServerSocket serverSocket;
     String bufferPath="C:\\MERAserver\\";
@@ -29,25 +25,19 @@ public class MERAserver {
             System.out.println("MERAserver has not been enabled");
         }
     }
-    void go(){
-        new Thread(new SocketListener()).start();
-    }
-
     public static void main(String[] args) {
-        new MERAserver().go();
+       new Thread(new MERAserver()).start();
     }
-
-        class SocketListener implements Runnable{
-            public void run(){
-                while(true){
-                    try{
-                        users.newConnection(serverSocket.accept());
-                    }catch(Exception e){
-                        System.out.println("SocketListener create error");
-                    }
-                }
+    public void run(){
+        while(true){
+            try{
+                users.newConnection(serverSocket.accept());
+            }catch(Exception e){
+                System.out.println("serverSocket create error");
             }
         }
+    }
+
 
         class UserList{
             private LinkedList<ActiveUser> users;
@@ -117,7 +107,7 @@ public class MERAserver {
                         fo.write(buffer, 0, count);
                     }
                 }catch(SocketTimeoutException se){
-                    System.out.println("file was been uploaded");
+                    System.out.println("file was been unloaded");
                 }catch(Exception e){
                     System.out.println("readFileFrom problem");
                 }finally{
@@ -182,9 +172,6 @@ public class MERAserver {
                     }catch(Exception e){
                         System.out.println(userName+": writeAboutNewUser problem");
                     }
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ex) {;}
                 }
 
                 synchronized void writeAboutDelUser(String nameDelUser){
@@ -215,7 +202,7 @@ public class MERAserver {
                      }
                  }
 
-                synchronized void writeFile(){
+                synchronized private void writeFile(){
                     System.out.println("WRITE");
                     try{
                         byte[] buffer = new byte[520];
@@ -240,5 +227,4 @@ public class MERAserver {
                 }
             }
         }
-
 }

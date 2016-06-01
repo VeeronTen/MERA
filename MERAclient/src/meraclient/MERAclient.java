@@ -34,7 +34,7 @@ public class MERAclient extends Application{
     //BufferedInputStream fis;
     //BufferedOutputStream fos;
 
-    File upLoadFile;
+    File unLoadFile;
     File downLoadDirectory;
 
     String userName;
@@ -113,11 +113,11 @@ public class MERAclient extends Application{
         });
 
         unLoadChoiceBTN.setOnAction(event->{
-            unLoadManager manager = new unLoadManager(unLoadPathLBL);
+            new FilesManager("unload", unLoadPathLBL);
         });
 
         unLoadPathLBL.textProperty().addListener(event->{
-            upLoadFile = new File(unLoadPathLBL.getText());
+            unLoadFile = new File(unLoadPathLBL.getText());
         });
 
         unLoadSendBTN.setOnAction(event->{
@@ -129,7 +129,7 @@ public class MERAclient extends Application{
         });
 
         downLoadChoiceBTN.setOnAction(event->{
-            downLoadManager manager = new downLoadManager(downLoadPathLBL);
+            new FilesManager("download", downLoadPathLBL);
         });
         downLoadPathLBL.textProperty().addListener(event->{
             downLoadDirectory = new File(downLoadPathLBL.getText());
@@ -168,14 +168,14 @@ public class MERAclient extends Application{
             os.write("file".getBytes());
             byte[] nameWithSpace = new byte[520];
 
-            byte[] name = upLoadFile.getName().getBytes();
-            byte[] space = new byte[520-upLoadFile.getName().length()];
+            byte[] name = unLoadFile.getName().getBytes();
+            byte[] space = new byte[520-unLoadFile.getName().length()];
 
             System.arraycopy(name, 0, nameWithSpace, 0, name.length);
             System.arraycopy(space, 0, nameWithSpace, name.length, space.length);
 
             os.write(nameWithSpace);
-            BufferedInputStream fileLoader = new BufferedInputStream(new FileInputStream(upLoadFile));
+            BufferedInputStream fileLoader = new BufferedInputStream(new FileInputStream(unLoadFile));
 
             int count;
             byte[] buffer = new byte[8192];
@@ -229,7 +229,7 @@ public class MERAclient extends Application{
                 }catch(SocketTimeoutException se){
                     System.out.println("file was been downloaded");
                 }catch(Exception e){
-                    System.out.println("read problem");
+                    System.out.println("read pr1oblem");
                 }
                 finally{
                     try{

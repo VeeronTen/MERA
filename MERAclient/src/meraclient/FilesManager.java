@@ -1,4 +1,6 @@
+
 package meraclient;
+
 import java.io.File;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -8,7 +10,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 
-public class downLoadManager {
+public class FilesManager {
     VBox filesVBmain;
     VBox filesVB;
     Label pathLBL;
@@ -17,11 +19,21 @@ public class downLoadManager {
     Label ExternalLabel;
     String presentDir;
 
-    public downLoadManager(Label label){
+    String file;
+    String managerType;
+    FilesManager(String type, Label label){
         ExternalLabel = label;
+        managerType=type;
+
         stage = new Stage();
-            stage.setTitle("Download Manager");
+            if(managerType=="download")
+                stage.setTitle("Download Manager");
+            if(managerType=="unload")
+                stage.setTitle("Unload Manager");
+
         presentDir="C:\\";
+        file = null;
+        stage = new Stage();
         start();
     }
 
@@ -34,6 +46,13 @@ public class downLoadManager {
                 Button b = new Button(item.getName());
                 addDirectoryEvent(b);
                 b.setStyle("-fx-base:yellow");
+                newFilesVB.getChildren().add(b);
+            }
+        if(managerType=="unload")
+        for(File item : dir.listFiles())
+            if(item.isFile()){
+                Button b = new Button(item.getName());
+                addFileEvent(b);
                 newFilesVB.getChildren().add(b);
             }
         }
@@ -60,7 +79,6 @@ public class downLoadManager {
                 filesVBmain.getChildren().add(filesVB);
             }
         });
-
         chooseBTN.setOnAction(event->{
             ExternalLabel.setText(presentDir);
             stage.close();
@@ -75,6 +93,14 @@ public class downLoadManager {
             filesVBmain.getChildren().remove(filesVB);
             filesVB=getDirectoryView(presentDir+b.getText()+"\\");
             filesVBmain.getChildren().add(filesVB);
+        });
+    }
+
+    void addFileEvent(Button b){
+        b.setOnAction(event->{
+            file = presentDir+b.getText();
+            ExternalLabel.setText(file);
+            stage.close();
         });
     }
 }
