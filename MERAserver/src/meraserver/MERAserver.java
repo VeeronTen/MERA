@@ -4,12 +4,15 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.LinkedList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MERAserver implements Runnable{
     UserList users;
@@ -59,6 +62,17 @@ public class MERAserver implements Runnable{
                 }catch(Exception e){
                     System.out.println("NAMEexception");
                 }
+
+                for(ActiveUser i: users)
+                    if(i.userName.equals(newUser.userName))
+                        try {
+                            newUser.socket.close();
+                            Thread.currentThread().interrupt();
+                            return;
+                        } catch (IOException ex) {
+                            System.out.println("Socket can't close. why? i do not know");
+                        }
+
 
                 users.add(newUser);
                 for(ActiveUser i:users)
@@ -136,7 +150,8 @@ public class MERAserver implements Runnable{
                 public void run(){
                     byte[] byteArray;
                     try{
-                        while(true){
+                        while(!Thread.currentThread().isInterrupted()){
+                            System.out.println(userName+"dodo");
                             byteArray = new byte[4];//count/2=length
                             is.read(byteArray);
                             String key = new String(byteArray, "UTF-8");//.trim();
@@ -159,13 +174,12 @@ public class MERAserver implements Runnable{
                             }
                         }
                     }catch(Exception e){
+                        System.out.println("ddeell");
                         deleteUserFromUsers(this);
-                        Thread.currentThread().interrupt();
                     }
                 }
 
                 synchronized void writeAboutNewUser(String nameNewUser){
-                    System.out.println(userName+" добавляет "+nameNewUser);
                     try{
                         os.write("user".getBytes());
                         os.write(nameNewUser.getBytes());

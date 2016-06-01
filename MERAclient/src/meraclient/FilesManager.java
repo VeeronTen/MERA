@@ -63,13 +63,15 @@ public class FilesManager {
 
     void start(){
         filesVBmain = new VBox();
-            HBox pathVB = new HBox(10);
+            pathLBL = new Label(presentDir);
+            HBox buttonsHB = new HBox(10);
                 Button upBTN = new Button("↑↑↑");
                 Button chooseBTN = new Button("Выбрать");
-                pathLBL = new Label(presentDir);
-                pathVB.getChildren().addAll(upBTN, chooseBTN, pathLBL);
+                    if(managerType!="download")
+                        chooseBTN.setDisable(true);
+                buttonsHB.getChildren().addAll(upBTN, chooseBTN);
             filesVB = getDirectoryView(presentDir);
-            filesVBmain.getChildren().addAll(pathVB,filesVB);
+            filesVBmain.getChildren().addAll(pathLBL, buttonsHB,filesVB);
 
         upBTN.setOnAction(event->{
             String newPath = new File(presentDir).getParent();

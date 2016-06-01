@@ -1,9 +1,8 @@
 package meraclient;
 //когда оправляем файл - запретить читать файл
 //при отключнии ресетить все
-import com.sun.scenario.effect.Merge;
+
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -12,8 +11,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -31,8 +28,6 @@ public class MERAclient extends Application{
 
     InputStream is;
     OutputStream os;
-    //BufferedInputStream fis;
-    //BufferedOutputStream fos;
 
     File unLoadFile;
     File downLoadDirectory;
@@ -86,10 +81,10 @@ public class MERAclient extends Application{
         GridPane.setConstraints(unLoadVBmain, 0, 2);
         GridPane.setConstraints(downLoadVBmain, 0, 3);
         GridPane.setConstraints(eventsVB, 0, 4);
-
-
         root.getChildren().addAll(usersVB, userNameTF, ipHBmain, unLoadVBmain, downLoadVBmain, eventsVB);
-////////////////////////////////////////////////////////////////////////////
+
+
+
         userNameTF.textProperty().addListener(event->{
             userName = userNameTF.getText();
         });
@@ -247,7 +242,7 @@ public class MERAclient extends Application{
     class Connection implements Runnable{
         public void run(){
             byte[] byteArray;
-            while(true){
+            while(!Thread.currentThread().isInterrupted()){
                 try{
                     byteArray = new byte[4];//count/2=length
                     is.read(byteArray);
@@ -284,7 +279,8 @@ public class MERAclient extends Application{
                             readFile();
                             break;
                         default:
-                            System.out.println("def");
+                            Thread.currentThread().interrupt();
+                            System.out.println("reset");
                             break;
                     }
                 }catch(Exception e){
@@ -372,5 +368,9 @@ public class MERAclient extends Application{
                         });
                     }
         }
+    }
+
+    void resetGUI(){
+        ;
     }
 }
