@@ -11,8 +11,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.LinkedList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class MERAserver implements Runnable{
     UserList users;
@@ -28,9 +26,11 @@ public class MERAserver implements Runnable{
             System.out.println("MERAserver has not been enabled");
         }
     }
+
     public static void main(String[] args) {
        new Thread(new MERAserver()).start();
     }
+
     public void run(){
         while(true){
             try{
@@ -40,7 +40,6 @@ public class MERAserver implements Runnable{
             }
         }
     }
-
 
         class UserList{
             private LinkedList<ActiveUser> users;
@@ -78,8 +77,6 @@ public class MERAserver implements Runnable{
                 for(ActiveUser i:users)
                     if(i!=newUser)
                         i.writeAboutNewUser(newUser.userName);
-
-
 
                 for(ActiveUser i:users)
                         newUser.writeAboutNewUser(i.userName);
@@ -151,7 +148,6 @@ public class MERAserver implements Runnable{
                     byte[] byteArray;
                     try{
                         while(!Thread.currentThread().isInterrupted()){
-                            System.out.println(userName+"dodo");
                             byteArray = new byte[4];//count/2=length
                             is.read(byteArray);
                             String key = new String(byteArray, "UTF-8");//.trim();
@@ -170,6 +166,9 @@ public class MERAserver implements Runnable{
                                     break;
                                 default:
                                     System.out.println("def");
+                                    socket.close();
+                                    Thread.currentThread().interrupt();
+                                    deleteUserFromUsers(this);
                                     break;
                             }
                         }

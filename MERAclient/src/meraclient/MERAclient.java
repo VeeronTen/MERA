@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -48,11 +50,16 @@ public class MERAclient extends Application{
 
         usersVB = new VBox();
 
-        TextField userNameTF = new TextField();//подсказку
-        HBox ipHBmain = new HBox();
-            TextField ipTF = new TextField("localhost");//подсказку
-            Button ipBTN = new Button("Подключиться");
-            ipHBmain.getChildren().addAll(ipTF, ipBTN);
+        VBox logVBmain = new VBox();
+            TextField userNameTF = new TextField();
+                userNameTF.setPromptText("Username (1-10 chars)");
+            TextField ipTF = new TextField("localhost");
+                ipTF.setPromptText("Server IP");
+            HBox logHB = new HBox();
+                Button loginBTN = new Button("Login");
+                Button logoutBTN = new Button("Logout");
+                logHB.getChildren().addAll(loginBTN, logoutBTN);
+            logVBmain.getChildren().addAll(userNameTF, ipTF, logHB);
 
         VBox unLoadVBmain = new VBox();
             Label unLoadPathLBL = new Label("Выберите файл для отправки");
@@ -61,13 +68,12 @@ public class MERAclient extends Application{
                 Button unLoadSendBTN = new Button("Отправить");
                 unLoadHB.getChildren().addAll(unLoadChoiceBTN, unLoadSendBTN);
             unLoadVBmain.getChildren().addAll(unLoadPathLBL, unLoadHB);
-            //unLoadVBmain.setDisable(true);
+            //unLoadSendBTN.setDisable(true);
 
         VBox downLoadVBmain = new VBox();
             Label downLoadPathLBL = new Label("Выберите директорию для сохранения");
             Button downLoadChoiceBTN = new Button("Выбрать");
             downLoadVBmain.getChildren().addAll(downLoadPathLBL, downLoadChoiceBTN);
-            //downLoadVBmain.setDisable(true);
 
         eventsVB = new VBox();
 
@@ -76,12 +82,11 @@ public class MERAclient extends Application{
             root.setHgap(5);
             root.setVgap(30);
 
-        GridPane.setConstraints(userNameTF, 0, 0); GridPane.setConstraints(usersVB, 1, 0);
-        GridPane.setConstraints(ipHBmain, 0, 1);
-        GridPane.setConstraints(unLoadVBmain, 0, 2);
-        GridPane.setConstraints(downLoadVBmain, 0, 3);
-        GridPane.setConstraints(eventsVB, 0, 4);
-        root.getChildren().addAll(usersVB, userNameTF, ipHBmain, unLoadVBmain, downLoadVBmain, eventsVB);
+        GridPane.setConstraints(logVBmain, 0, 0); GridPane.setConstraints(usersVB, 1, 0);
+        GridPane.setConstraints(unLoadVBmain, 0, 1);
+        GridPane.setConstraints(downLoadVBmain, 0, 2);
+        GridPane.setConstraints(eventsVB, 0, 3);
+        root.getChildren().addAll(logVBmain, unLoadVBmain, downLoadVBmain, usersVB, eventsVB);
 
 
 
@@ -93,7 +98,7 @@ public class MERAclient extends Application{
             ip = ipTF.getText();
         });
 
-        ipBTN.setOnAction(event->{//при переподключении должно все ресетаться
+        loginBTN.setOnAction(event->{//при переподключении должно все ресетаться
             connect();
             if(connected){
                 ipTF.setStyle(goodStyle);
@@ -106,7 +111,13 @@ public class MERAclient extends Application{
                 downLoadVBmain.setDisable(true);
             }
         });
-
+        logoutBTN.setOnAction(event->{
+            try {
+                socket.close();
+            } catch (IOException ex) {
+                System.out.println("logoutBTN problem");
+            }
+        });
         unLoadChoiceBTN.setOnAction(event->{
             new FilesManager("unload", unLoadPathLBL);
         });
@@ -185,24 +196,22 @@ public class MERAclient extends Application{
 
     void readyRead(String fileName){
         try{
-        os.write("acpt".getBytes());
+            os.write("acpt".getBytes());
 
-        byte[] buffer = new byte[520];
+            byte[] buffer = new byte[520];
 
-        byte[] name = fileName.getBytes();
-        byte[] space = new byte[520-fileName.getBytes().length];
+            byte[] name = fileName.getBytes();
+            byte[] space = new byte[520-fileName.getBytes().length];
 
-        System.arraycopy(name, 0, buffer, 0, name.length);
-        System.arraycopy(space, 0, buffer, name.length, space.length);
+            System.arraycopy(name, 0, buffer, 0, name.length);
+            System.arraycopy(space, 0, buffer, name.length, space.length);
 
-        os.write(buffer);
+            os.write(buffer);
         }catch(Exception e){
             System.out.println("readyRead problem");
         }
     }
     void readFile(){
-
-
         byte[] buffer = new byte[520];
         String fileName;
         try{
@@ -236,14 +245,22 @@ public class MERAclient extends Application{
                 }
         }catch(Exception e){
             System.out.println("readFile  problem");
+        }finally{
+            Platform.runLater(new Runnable(){
+                public void run(){
+                    Object[] events = eventsVB.getChildren().toArray();
+                    for(Object o : events)
+                        ((Button)((HBox)o).getChildren().get(1)).setDisable(false);
+                }
+            });
         }
     }
 
     class Connection implements Runnable{
         public void run(){
             byte[] byteArray;
-            while(!Thread.currentThread().isInterrupted()){
-                try{
+            try{
+                while(!Thread.currentThread().isInterrupted()){
                     byteArray = new byte[4];//count/2=length
                     is.read(byteArray);
                     String key = new String(byteArray, "UTF-8");//.trim();
@@ -281,17 +298,15 @@ public class MERAclient extends Application{
                         default:
                             Thread.currentThread().interrupt();
                             System.out.println("reset");
-                            break;
                     }
-                }catch(Exception e){
-                    System.out.println("ReadKeyException");
                 }
+            }catch(Exception e){
+                System.out.println("reset2");
             }
         }
     }
 
     class FileEvent{
-
         FileEvent(String userName, String fileName){
             HBox eventHB = new HBox();
             Label nameLBL = new Label(userName);
@@ -301,7 +316,11 @@ public class MERAclient extends Application{
             eventHB.getChildren().addAll(nameLBL, okBTN, skipBTN);
 
             okBTN.setOnAction(event->{
-                    readyRead(fileName);
+                Object[] events = eventsVB.getChildren().toArray();
+                delEvent(userName, fileName);
+                for(Object o : events)
+                    ((Button)((HBox)o).getChildren().get(1)).setDisable(true);
+                readyRead(fileName);
             });
             skipBTN.setOnAction(event->{
                 delEvent(userName, fileName);
@@ -322,7 +341,6 @@ public class MERAclient extends Application{
             for(Object o : events)
                 if(((Label)((HBox)o).getChildren().get(0)).getText().equals(userName))
                     if(((Button)((HBox)o).getChildren().get(1)).getText().equals(fileName)){
-                        HBox delHB = (HBox)o;
                         Platform.runLater(new Runnable(){
                             public void run(){
                                 try{
