@@ -22,8 +22,9 @@ public class MERAserver implements Runnable{
             new File(bufferPath).mkdir();
             users = new UserList();
             serverSocket = new ServerSocket(8080);
+            System.out.println("Server has been enabled");
         }catch(Exception e){
-            System.out.println("MERAserver has not been enabled");
+            System.out.println("___Server has not been enabled");
         }
     }
 
@@ -36,12 +37,12 @@ public class MERAserver implements Runnable{
             try{
                 users.newConnection(serverSocket.accept());
             }catch(Exception e){
-                System.out.println("serverSocket create error");
+                System.out.println("___Server run problem");
             }
         }
     }
 
-        class UserList{
+    class UserList{
             private LinkedList<ActiveUser> users;
 
             UserList() {
@@ -59,7 +60,7 @@ public class MERAserver implements Runnable{
                     newUser.is.read(byteArray);
                     newUser.userName = new String(byteArray, "UTF-8");
                 }catch(Exception e){
-                    System.out.println("NAMEexception");
+                    System.out.println("___addUserToUsers proplem");
                 }
 
                 for(ActiveUser i: users)
@@ -69,7 +70,7 @@ public class MERAserver implements Runnable{
                             Thread.currentThread().interrupt();
                             return;
                         } catch (IOException ex) {
-                            System.out.println("Socket can't close. why? i do not know");
+                            System.out.println("___Socket can't close. why? i do not know");
                         }
 
 
@@ -80,6 +81,7 @@ public class MERAserver implements Runnable{
 
                 for(ActiveUser i:users)
                         newUser.writeAboutNewUser(i.userName);
+                System.out.println("user "+newUser.userName.trim()+" ONline");
             }
             void deleteUserFromUsers(ActiveUser userForDel){
                 users.remove(users.indexOf(userForDel));
@@ -88,18 +90,16 @@ public class MERAserver implements Runnable{
             }
 
             void sendFileEventFrom(ActiveUser sender){
-                byte[] Buffer = new byte[520];//max length of filename in Windows OS - 260. 2 bytes - char size.
+                byte[] Buffer = new byte[520];
                 try{
                     sender.is.read(Buffer);
                     String fileName = new String(Buffer, "UTF-8").trim();
-                    System.out.println(bufferPath+fileName);
                     readFileFrom(sender, fileName);
 
                     for(ActiveUser i : users)
                         i.writeAboutNewFile(sender.userName, fileName);
-
                 }catch(Exception e){
-                    System.out.println("sendFile problem");
+                    System.out.println("___sendFile problem");
                 }
 
 
@@ -107,25 +107,22 @@ public class MERAserver implements Runnable{
             void readFileFrom(ActiveUser sender, String fileName){
                 int count;
                 byte[] buffer = new byte[8192];
-
                 try{
                     FileOutputStream fo = new FileOutputStream(bufferPath+fileName);
                     while((count = sender.is.read(buffer))!=-1){
-                        if(sender.socket.getSoTimeout()==0 && count!=8192){
-                            System.out.println("setSoTimeout");
+                        if(sender.socket.getSoTimeout()==0 && count!=8192)
                             sender.socket.setSoTimeout(1000);
-                        }
                         fo.write(buffer, 0, count);
                     }
                 }catch(SocketTimeoutException se){
-                    System.out.println("file was been unloaded");
+                    System.out.println("new file '"+fileName+"' from "+sender.userName.trim());
                 }catch(Exception e){
-                    System.out.println("readFileFrom problem");
+                    System.out.println("___readFileFrom problem");
                 }finally{
                     try{
                     sender.socket.setSoTimeout(0);
                     }catch(Exception e){
-                        System.out.println("setSoTimeout(0) problem");
+                        System.out.println("___setSoTimeout(0) problem");
                     }
                 }
             }
@@ -141,7 +138,7 @@ public class MERAserver implements Runnable{
                         is = socket.getInputStream();
                         os = socket.getOutputStream();
                     }catch(Exception e){
-                        System.out.println("ActiveUser Constructor Error");
+                        System.out.println("___ActiveUser Constructor Error");
                     }
                 }
                 public void run(){
@@ -155,9 +152,6 @@ public class MERAserver implements Runnable{
                                 case "user":
                                     addUserToUsers(this);
                                     break;
-                                case "delt":
-                                    deleteUserFromUsers(this);
-                                    break;
                                 case "file":
                                     sendFileEventFrom(this);
                                     break;
@@ -165,16 +159,15 @@ public class MERAserver implements Runnable{
                                     writeFile();
                                     break;
                                 default:
-                                    System.out.println("def");
                                     socket.close();
                                     Thread.currentThread().interrupt();
                                     deleteUserFromUsers(this);
-                                    break;
+                                    System.out.println("user "+userName.trim()+" offline");
                             }
                         }
                     }catch(Exception e){
-                        System.out.println("ddeell");
                         deleteUserFromUsers(this);
+                        System.out.println("user "+userName.trim()+" offline");
                     }
                 }
 
@@ -183,16 +176,16 @@ public class MERAserver implements Runnable{
                         os.write("user".getBytes());
                         os.write(nameNewUser.getBytes());
                     }catch(Exception e){
-                        System.out.println(userName+": writeAboutNewUser problem");
+                        System.out.println("___"+userName.trim()+": writeAboutNewUser problem");
                     }
                 }
 
                 synchronized void writeAboutDelUser(String nameDelUser){
                     try{
-                   os.write("delt".getBytes());
-                   os.write(nameDelUser.getBytes());
+                        os.write("delt".getBytes());
+                        os.write(nameDelUser.getBytes());
                     }catch(Exception e){
-                        System.out.println(userName+": writeAboutDelUser problem");
+                        System.out.println("___"+userName.trim()+": writeAboutDelUser problem");
                     }
                 }
 
@@ -211,12 +204,11 @@ public class MERAserver implements Runnable{
                         os.write(nameWithSpace);
                         os.write(nameSender.getBytes());
                      }catch(Exception e){
-                         System.out.println(userName+": writeAboutNewFile");
+                         System.out.println("___"+userName.trim()+": writeAboutNewFile problem");
                      }
                  }
 
                 synchronized private void writeFile(){
-                    System.out.println("WRITE");
                     try{
                         byte[] buffer = new byte[520];
                         is.read(buffer);
@@ -230,12 +222,12 @@ public class MERAserver implements Runnable{
 
                         while((count=fileLoader.read(buffer))!=-1)
                             os.write(buffer, 0, count);
-
+                        System.out.println(userName.trim()+" downloaded '"+fileName+"'");
                     }catch(Exception e){
-                        System.out.println("writeFile problem");
+                        System.out.println("___writeFile to "+userName.trim()+" problem");
                     }
                     try {
-                        Thread.sleep(5000);
+                        Thread.sleep(1000);
                     } catch (InterruptedException ex) {;}
                 }
             }

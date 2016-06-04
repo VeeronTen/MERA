@@ -11,16 +11,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -39,76 +35,113 @@ public class MERAclient extends Application{
 
     VBox usersVB;
     VBox eventsVB;
+    Button unLoadSendBTN;
+
+    TextField userNameTF;
+    TextField ipTF;
+    Button loginBTN;
+    Button logoutBTN;
+
+    HBox onlineHB;
 
     usersInListManager MNGusers = new usersInListManager();
-
-    Boolean connected = false;
 
     public void start(Stage primaryStage){
         String badStyle = "-fx-base: salmon";
         String goodStyle = "-fx-base: lightgreen";
-
-        usersVB = new VBox();
+        String backStyle = "-fx-base: thistle";
 
         VBox logVBmain = new VBox();
-            TextField userNameTF = new TextField();
-                userNameTF.setPromptText("Username (1-10 chars)");
-            TextField ipTF = new TextField("localhost");
+            userNameTF = new TextField();
+                userNameTF.setPromptText("Username");
+                userNameTF.setMaxWidth(100);
+            ipTF = new TextField("localhost");
                 ipTF.setPromptText("Server IP");
+                ipTF.setMaxWidth(100);
             HBox logHB = new HBox();
-                Button loginBTN = new Button("Login");
-                Button logoutBTN = new Button("Logout");
+                loginBTN = new Button("Login");
+                    loginBTN.setDisable(true);
+                logoutBTN = new Button("Logout");
+                    logoutBTN.setDisable(true);
                 logHB.getChildren().addAll(loginBTN, logoutBTN);
             logVBmain.getChildren().addAll(userNameTF, ipTF, logHB);
 
         VBox unLoadVBmain = new VBox();
-            Label unLoadPathLBL = new Label("Выберите файл для отправки");
+            Label unLoadPathLBL = new Label("File for send");
             HBox unLoadHB = new HBox();
-                Button unLoadChoiceBTN = new Button("Выбрать");
-                Button unLoadSendBTN = new Button("Отправить");
+                Button unLoadChoiceBTN = new Button("Choose");
+                unLoadSendBTN = new Button("Send");
+                    unLoadSendBTN.setDisable(true);
                 unLoadHB.getChildren().addAll(unLoadChoiceBTN, unLoadSendBTN);
             unLoadVBmain.getChildren().addAll(unLoadPathLBL, unLoadHB);
-            //unLoadSendBTN.setDisable(true);
 
         VBox downLoadVBmain = new VBox();
-            Label downLoadPathLBL = new Label("Выберите директорию для сохранения");
-            Button downLoadChoiceBTN = new Button("Выбрать");
+            Label downLoadPathLBL = new Label("Directory for download");
+            Button downLoadChoiceBTN = new Button("Choose");
             downLoadVBmain.getChildren().addAll(downLoadPathLBL, downLoadChoiceBTN);
 
-        eventsVB = new VBox();
+        onlineHB = new HBox(20);
+            VBox usersVBwithLBL = new VBox(10);
+                Label usersLBL = new Label("Users OnLine");
+                usersVB = new VBox();
+                usersVBwithLBL.getChildren().addAll(usersLBL, usersVB);
+            VBox eventsVBwithLBL = new VBox(10);
+                Label eventsLBL = new Label("Files for download");
+                eventsVB = new VBox();
+                eventsVBwithLBL.getChildren().addAll(eventsLBL, eventsVB);
+            onlineHB.getChildren().addAll(usersVBwithLBL, eventsVBwithLBL);
+            onlineHB.setVisible(false);
 
-        GridPane root = new GridPane();
-            root.setPadding(new Insets(10, 10, 10, 10));
-            root.setHgap(5);
-            root.setVgap(30);
-
-        GridPane.setConstraints(logVBmain, 0, 0); GridPane.setConstraints(usersVB, 1, 0);
-        GridPane.setConstraints(unLoadVBmain, 0, 1);
-        GridPane.setConstraints(downLoadVBmain, 0, 2);
-        GridPane.setConstraints(eventsVB, 0, 3);
-        root.getChildren().addAll(logVBmain, unLoadVBmain, downLoadVBmain, usersVB, eventsVB);
+        HBox root = new HBox(10);
+            VBox mainVB = new VBox(30);
+                mainVB.getChildren().addAll(logVBmain, unLoadVBmain, downLoadVBmain);
+            root.getChildren().addAll(mainVB, onlineHB);
+            root.setStyle(backStyle);
 
 
 
         userNameTF.textProperty().addListener(event->{
-            userName = userNameTF.getText();
+            String s = userNameTF.getText();
+            if(s.length()>10){
+                s = s.substring(0,10);
+                userNameTF.setText(s);
+            }
+            s=s.trim();
+            if(s.length()>0){
+                loginBTN.setDisable(false);
+                userName=s;
+            }
+            else loginBTN.setDisable(true);
         });
 
         ipTF.textProperty().addListener(event->{
             ip = ipTF.getText();
         });
 
-        loginBTN.setOnAction(event->{//при переподключении должно все ресетаться
-            connect();
-            if(connected){
+        loginBTN.setOnAction(event->{
+            try {
+                socket = new Socket(ip, 8080);
+                is =  socket.getInputStream();
+                os =  socket.getOutputStream();
+
+                os.write("user".getBytes());
+                os.write(userName.getBytes());
+
+                Thread conThread = new Thread(new Connection());
+                conThread.setDaemon(true);
+                conThread.start();
+
                 ipTF.setStyle(goodStyle);
-                unLoadVBmain.setDisable(false);
-                    //unLoadSendBTN.setDisable(true);
-                downLoadVBmain.setDisable(false);
-            }else{
+                userNameTF.setDisable(true);
+                ipTF.setDisable(true);
+                ipTF.setStyle(goodStyle);
+                loginBTN.setDisable(true);
+                logoutBTN.setDisable(false);
+                unLoadSendBTN.setDisable(false);
+
+                onlineHB.setVisible(true);
+            } catch (IOException ex) {
                 ipTF.setStyle(badStyle);
-                unLoadVBmain.setDisable(true);
-                downLoadVBmain.setDisable(true);
             }
         });
         logoutBTN.setOnAction(event->{
@@ -142,31 +175,12 @@ public class MERAclient extends Application{
         });
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
+        primaryStage.setTitle("Posa");
         primaryStage.show();
     }
 
     public static void main(String[] args){
         launch(args);
-    }
-
-    void connect(){
-        try {
-                socket = new Socket(ip, 8080);
-                is =  socket.getInputStream();
-                os =  socket.getOutputStream();
-
-                os.write("user".getBytes());
-                os.write(userName.getBytes());
-
-                connected=true;
-
-                Thread conThread = new Thread(new Connection());
-                conThread.setDaemon(true);
-                conThread.start();
-
-            } catch (IOException ex) {
-                System.out.println("Connection problem");
-            }
     }
 
     void sendFile(){
@@ -220,24 +234,19 @@ public class MERAclient extends Application{
                 try{
                     int count;
                     buffer = new byte[8192];
-                    System.out.println("sssss");
                     FileOutputStream fo = new FileOutputStream(downLoadDirectory+"\\"+fileName);
                     while((count = is.read(buffer))!=-1){
-                        System.out.println(count);{
-                        if(socket.getSoTimeout()==0 && count!=8192){
-                            System.out.println("setSoTimeout");
+                        if(socket.getSoTimeout()==0 && count!=8192)
                             socket.setSoTimeout(1000);
-                        }
                         fo.write(buffer, 0, count);
-                    }}
+                    }
                 }catch(SocketTimeoutException se){
-                    System.out.println("file was been downloaded");
+                    //System.out.println("file was been downloaded");
                 }catch(Exception e){
                     System.out.println("read pr1oblem");
                 }
                 finally{
                     try{
-                        System.out.println("0");
                         socket.setSoTimeout(0);
                     }catch(Exception e){
                         System.out.println("setSoTimeout(0) problem");
@@ -254,6 +263,24 @@ public class MERAclient extends Application{
                 }
             });
         }
+    }
+
+    void resetGUI(){
+        Platform.runLater(new Runnable(){
+            public void run(){
+                eventsVB.getChildren().clear();
+                usersVB.getChildren().clear();
+
+                userNameTF.setDisable(false);
+                ipTF.setDisable(false);
+                    ipTF.setStyle("");
+                loginBTN.setDisable(false);
+                logoutBTN.setDisable(true);
+                unLoadSendBTN.setDisable(true);
+
+                onlineHB.setVisible(false);
+            }
+        });
     }
 
     class Connection implements Runnable{
@@ -280,7 +307,6 @@ public class MERAclient extends Application{
                         case "file":
                             String name;
                             String file;
-                            System.out.println("file");
 
                             byteArray = new byte[520];
                             is.read(byteArray);
@@ -297,24 +323,20 @@ public class MERAclient extends Application{
                             break;
                         default:
                             Thread.currentThread().interrupt();
-                            System.out.println("reset");
+                            resetGUI();
                     }
                 }
             }catch(Exception e){
-                System.out.println("reset2");
+                resetGUI();
             }
         }
     }
-
     class FileEvent{
         FileEvent(String userName, String fileName){
             HBox eventHB = new HBox();
-            Label nameLBL = new Label(userName);
-            Button okBTN = new Button(fileName);
-            Button skipBTN = new Button("Отказаться");
-
-            eventHB.getChildren().addAll(nameLBL, okBTN, skipBTN);
-
+                Button okBTN = new Button(userName+": "+fileName);;
+                Button skipBTN = new Button("Skip");
+                eventHB.getChildren().addAll(okBTN, skipBTN);
             okBTN.setOnAction(event->{
                 Object[] events = eventsVB.getChildren().toArray();
                 delEvent(userName, fileName);
@@ -334,30 +356,26 @@ public class MERAclient extends Application{
                     }
                 }
             });
-            System.out.println(userName+" "+fileName);
         }
         private void delEvent(String userName, String fileName){
         Object[] events = eventsVB.getChildren().toArray();
             for(Object o : events)
-                if(((Label)((HBox)o).getChildren().get(0)).getText().equals(userName))
-                    if(((Button)((HBox)o).getChildren().get(1)).getText().equals(fileName)){
-                        Platform.runLater(new Runnable(){
-                            public void run(){
-                                try{
-                                    eventsVB.getChildren().remove(o);
-                                }catch(Exception e){
-                                    ;
-                                }
+                if(((Button)((HBox)o).getChildren().get(1)).getText().equals(userName+": "+fileName)){
+                    Platform.runLater(new Runnable(){
+                        public void run(){
+                            try{
+                                eventsVB.getChildren().remove(o);
+                            }catch(Exception e){
+                                ;
                             }
-                        });
-                    }
+                        }
+                    });
+                }
         }
 
     }
-
     class usersInListManager{
         void newUser(String name){
-            System.out.println(userName +" add "+name);
             Label nameLBL = new Label(name);
             Platform.runLater(new Runnable(){
                 public void run(){
@@ -386,9 +404,5 @@ public class MERAclient extends Application{
                         });
                     }
         }
-    }
-
-    void resetGUI(){
-        ;
     }
 }

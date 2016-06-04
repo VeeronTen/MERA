@@ -11,9 +11,10 @@ import javafx.stage.Stage;
 
 
 public class FilesManager {
-    VBox filesVBmain;
-    VBox filesVB;
+    HBox filesHB;
     Label pathLBL;
+
+    VBox root;
 
     Stage stage;
     Label ExternalLabel;
@@ -37,64 +38,80 @@ public class FilesManager {
         start();
     }
 
-    VBox getDirectoryView(String path){
+    HBox getDirectoryView(String path){
         File dir = new File(path);
-        VBox newFilesVB = new VBox();
+        HBox result = new HBox();
         if(dir.listFiles()!=null){
+        result = new HBox();
+            VBox dirVB = new VBox();
+                Label dirLBL = new Label("Directories");
+                VBox dirContent = new VBox();
+                dirVB.getChildren().addAll(dirLBL, dirContent);
+            VBox filesVB = new VBox();
+                Label filesLBL = new Label("Files");
+                VBox filesContent = new VBox();
+                filesVB.getChildren().addAll(filesLBL, filesContent);
+            result.getChildren().addAll(dirVB, filesVB);
+
+
         for(File item : dir.listFiles())
             if(item.isDirectory()){
                 Button b = new Button(item.getName());
                 addDirectoryEvent(b);
                 b.setStyle("-fx-base:yellow");
-                newFilesVB.getChildren().add(b);
+                dirContent.getChildren().add(b);
             }
         if(managerType=="unload")
         for(File item : dir.listFiles())
             if(item.isFile()){
                 Button b = new Button(item.getName());
                 addFileEvent(b);
-                newFilesVB.getChildren().add(b);
+                filesContent.getChildren().add(b);
             }
         }
         presentDir=path;
         pathLBL.setText(presentDir);
-        return newFilesVB;
+        return result;
     }
 
     void start(){
-        filesVBmain = new VBox();
-            pathLBL = new Label(presentDir);
-            HBox buttonsHB = new HBox(10);
-                Button upBTN = new Button("↑↑↑");
-                Button chooseBTN = new Button("Выбрать");
-                    if(managerType!="download")
-                        chooseBTN.setDisable(true);
-                buttonsHB.getChildren().addAll(upBTN, chooseBTN);
-            filesVB = getDirectoryView(presentDir);
-            filesVBmain.getChildren().addAll(pathLBL, buttonsHB,filesVB);
+        String backStyle = "-fx-base: thistle";
+        root = new VBox(10);
+            VBox pathVB = new VBox();
+                pathLBL = new Label(presentDir);
+                HBox buttonsHB = new HBox();
+                    Button upBTN = new Button("Up");
+                    Button chooseBTN = new Button("Choose");
+                        if(managerType!="download")
+                            chooseBTN.setDisable(true);
+                    buttonsHB.getChildren().addAll(upBTN, chooseBTN);
+                pathVB.getChildren().addAll(pathLBL, buttonsHB);
+            filesHB = getDirectoryView(presentDir);
+            root.getChildren().addAll(pathVB,filesHB);
+            root.setStyle(backStyle);
 
         upBTN.setOnAction(event->{
             String newPath = new File(presentDir).getParent();
             if(newPath!=null){
-                filesVBmain.getChildren().remove(filesVB);
-                filesVB=getDirectoryView(newPath);
-                filesVBmain.getChildren().add(filesVB);
+                root.getChildren().remove(filesHB);
+                filesHB=getDirectoryView(newPath);
+                root.getChildren().add(filesHB);
             }
         });
         chooseBTN.setOnAction(event->{
             ExternalLabel.setText(presentDir);
             stage.close();
         });
-        Scene Scene = new Scene(filesVBmain);
+        Scene Scene = new Scene(root);
         stage.setScene(Scene);
         stage.show();
     }
 
     void addDirectoryEvent(Button b){
         b.setOnAction(event->{
-            filesVBmain.getChildren().remove(filesVB);
-            filesVB=getDirectoryView(presentDir+b.getText()+"\\");
-            filesVBmain.getChildren().add(filesVB);
+            root.getChildren().remove(filesHB);
+            filesHB=getDirectoryView(presentDir+b.getText()+"\\");
+            root.getChildren().add(filesHB);
         });
     }
 
